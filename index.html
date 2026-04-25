@@ -100,36 +100,52 @@
           <div id="playerSummary" class="summary"></div>
 
           <h3>Money</h3>
-          <p class="muted">Choose Add or Subtract first, select an amount, then save the change.</p>
+          <p class="muted">Choose Add or Subtract first, select an amount, then apply or cancel.</p>
           <div class="segmented">
             <button id="moneyAddBtn">Add</button>
             <button id="moneySubtractBtn">Subtract</button>
           </div>
 
-          <div id="moneyActionPanel" class="moneyActionPanel hidden">
+          <div id="moneyActionPanel" class="actionPanel hidden">
             <p id="moneyActionLabel" class="actionLabel">Select an amount</p>
             <div class="amountGrid" id="moneyButtons"></div>
-            <div id="pendingMoneyText" class="pendingMoneyText">No amount selected.</div>
-            <div class="moneyConfirmRow">
-              <button id="saveMoneyBtn" disabled>Save Change</button>
+            <div id="pendingMoneyText" class="pendingText">No amount selected.</div>
+            <div class="confirmRow">
+              <button id="applyMoneyBtn" disabled>Apply</button>
               <button id="cancelMoneyBtn" class="ghost">Cancel</button>
             </div>
           </div>
 
           <h3>Children</h3>
           <div class="counterRow">
-            <button id="minusChildBtn">− Child</button>
+            <button id="stageMinusChildBtn">− Child</button>
             <strong id="childCount">0</strong>
-            <button id="plusChildBtn">+ Child</button>
+            <button id="stagePlusChildBtn">+ Child</button>
+          </div>
+
+          <div id="childActionPanel" class="actionPanel hidden">
+            <div id="pendingChildText" class="pendingText">No child change selected.</div>
+            <div class="confirmRow">
+              <button id="applyChildBtn">Apply</button>
+              <button id="cancelChildBtn" class="ghost">Cancel</button>
+            </div>
           </div>
 
           <h3>Bank Loan Papers</h3>
           <p class="muted">Each loan paper gives 20K. Each loan paper must be paid back as 25K.</p>
           <div id="loanSummary" class="loanSummary"></div>
           <div class="counterRow">
-            <button id="payLoanBtn" class="warning">−1 Loan Paper</button>
+            <button id="stagePayLoanBtn" class="warning">−1 Loan Paper</button>
             <strong id="loanCount">0</strong>
-            <button id="takeLoanBtn">+1 Loan Paper</button>
+            <button id="stageTakeLoanBtn">+1 Loan Paper</button>
+          </div>
+
+          <div id="loanActionPanel" class="actionPanel hidden">
+            <div id="pendingLoanText" class="pendingText">No loan paper change selected.</div>
+            <div class="confirmRow">
+              <button id="applyLoanBtn">Apply</button>
+              <button id="cancelLoanBtn" class="ghost">Cancel</button>
+            </div>
           </div>
         </section>
 

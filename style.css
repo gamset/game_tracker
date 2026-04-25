@@ -34,10 +34,10 @@ body[data-theme="ocean"] {
 }
 
 body[data-theme="sunset"] {
-  --brand: #dc2626;
-  --brand2: #991b1b;
-  --accent: #ef4444;
-  --accent2: #fee2e2;
+  --brand: #e11d48;
+  --brand2: #9f1239;
+  --accent: #be123c;
+  --accent2: #ffe4e6;
   --bg: #fff1f2;
   --bg2: #fecdd3;
 }
@@ -146,8 +146,10 @@ button.warning {
 }
 
 button.selected {
-  background: linear-gradient(135deg, var(--accent), var(--brand));
+  background: linear-gradient(135deg, var(--brand), var(--accent));
   color: white;
+  border-color: transparent;
+  box-shadow: 0 10px 18px color-mix(in srgb, var(--brand) 22%, transparent);
 }
 
 input,
@@ -427,8 +429,8 @@ p {
 
 .segmented button {
   box-shadow: none;
-  background: color-mix(in srgb, var(--chip) 75%, #475569 25%);
-  color: color-mix(in srgb, var(--text) 75%, var(--muted) 25%);
+  background: #cbd5e1;
+  color: #334155;
   border: 1px solid var(--line);
 }
 
@@ -623,12 +625,14 @@ body.dark .badge.warn {
 }
 
 
-.moneyActionPanel {
+
+
+.actionPanel {
   margin-top: 0.75rem;
-  padding: 0.85rem;
+  padding: 0.9rem;
   border: 1px solid var(--line);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--cardSolid) 80%, var(--brand) 6%);
+  background: color-mix(in srgb, var(--cardSolid) 82%, var(--brand) 6%);
 }
 
 .actionLabel {
@@ -636,16 +640,16 @@ body.dark .badge.warn {
   margin-bottom: 0.35rem;
 }
 
-.pendingMoneyText {
+.pendingText {
   margin: 0.25rem 0 0.75rem;
   padding: 0.75rem 0.85rem;
   border-radius: 14px;
   background: var(--chip);
   color: var(--text);
-  font-weight: 800;
+  font-weight: 850;
 }
 
-.moneyConfirmRow {
+.confirmRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;

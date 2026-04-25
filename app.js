@@ -299,7 +299,7 @@ function renderPlayer() {
     <div class="metric"><span>Total Borrowed</span><strong>${formatK((p.loans || 0) * 20000)}</strong></div>
     <div class="metric"><span>Total Payback</span><strong>${formatK(p.loanOwed || 0)}</strong></div>
   `;
-  $("payLoanBtn").disabled = (p.loans || 0) <= 0;
+  $("stagePayLoanBtn").disabled = (p.loans || 0) <= 0;
   $("settleAllLoansBtn").disabled = (p.loans || 0) <= 0;
 
   $("finalizedCashText").innerHTML = p.finalizedCash == null
@@ -388,8 +388,8 @@ function selectPendingMoneyAmount(amount) {
 
   const actionWord = state.moneyMode === "add" ? "Add" : "Subtract";
   const sign = state.moneyMode === "add" ? "+" : "−";
-  $("pendingMoneyText").textContent = `${actionWord} ${sign}${formatK(amount)}. Tap Save Change to apply.`;
-  $("saveMoneyBtn").disabled = false;
+  $("pendingMoneyText").textContent = `${actionWord} ${sign}${formatK(amount)}. Tap Apply to save this change.`;
+  $("applyMoneyBtn").disabled = false;
 }
 
 function resetMoneyAction() {
@@ -399,7 +399,7 @@ function resetMoneyAction() {
   $("moneyActionPanel").classList.add("hidden");
   $("moneyActionLabel").textContent = "Select an amount";
   $("pendingMoneyText").textContent = "No amount selected.";
-  $("saveMoneyBtn").disabled = true;
+  $("applyMoneyBtn").disabled = true;
 
   $("moneyAddBtn").classList.remove("selected");
   $("moneySubtractBtn").classList.remove("selected");
@@ -409,7 +409,7 @@ function resetMoneyAction() {
   });
 }
 
-async function saveMoneyChange() {
+async function applyMoneyChange() {
   if (!state.moneyMode || !state.pendingMoneyAmount) return;
 
   const amount = state.pendingMoneyAmount;
@@ -430,6 +430,45 @@ async function saveMoneyChange() {
   resetMoneyAction();
 }
 
+function setMoneyMode(mode) {
+  state.moneyMode = mode;
+  state.pendingMoneyAmount = null;
+
+  $("moneyActionPanel").classList.remove("hidden");
+  $("moneyAddBtn").classList.toggle("selected", mode === "add");
+  $("moneySubtractBtn").classList.toggle("selected", mode === "subtract");
+
+  const actionWord = mode === "add" ? "Add money" : "Subtract money";
+  $("moneyActionLabel").textContent = `${actionWord}: select a denomination`;
+  $("pendingMoneyText").textContent = "No amount selected.";
+  $("applyMoneyBtn").disabled = true;
+
+  document.querySelectorAll("[data-money]").forEach((btn) => {
+    btn.classList.remove("selectedAmount");
+  });
+}
+
+function stageChildChange(delta) {
+  const currentChildren = state.currentPlayer?.children || 0;
+  if (delta < 0 && currentChildren <= 0) return;
+
+  state.pendingChildDelta = delta;
+  $("childActionPanel").classList.remove("hidden");
+  $("pendingChildText").textContent = `${delta > 0 ? "Add" : "Remove"} 1 child. Tap Apply to save this change.`;
+}
+
+function resetChildAction() {
+  state.pendingChildDelta = 0;
+  $("childActionPanel").classList.add("hidden");
+  $("pendingChildText").textContent = "No child change selected.";
+}
+
+async function applyChildChange() {
+  if (!state.pendingChildDelta) return;
+  await changeChildren(state.pendingChildDelta);
+  resetChildAction();
+}
+
 async function changeChildren(delta) {
   const p = state.currentPlayer;
   const next = Math.max(0, (p.children || 0) + delta);
@@ -448,38 +487,62 @@ async function changeChildren(delta) {
   });
 }
 
-async function takeLoan() {
-  await updateDoc(playerRef(), {
-    money: increment(20000),
-    loans: increment(1),
-    loanOwed: increment(25000),
-    updatedAt: serverTimestamp()
-  });
+function stageLoanChange(delta) {
+  const currentLoans = state.currentPlayer?.loans || 0;
+  if (delta < 0 && currentLoans <= 0) return;
 
-  await logActivity("Added 1 loan paper: borrowed +20K, payback owed +25K.", {
-    type: "loan",
-    action: "take",
-    moneyChange: 20000,
-    owedChange: 25000
-  });
+  state.pendingLoanDelta = delta;
+  $("loanActionPanel").classList.remove("hidden");
+  $("pendingLoanText").textContent = delta > 0
+    ? "Add 1 loan paper: receive 20K and add 25K payback owed. Tap Apply to save."
+    : "Pay/remove 1 loan paper: subtract 25K and reduce loan paper count. Tap Apply to save.";
 }
 
-async function payLoan() {
-  if ((state.currentPlayer?.loans || 0) <= 0) return;
+function resetLoanAction() {
+  state.pendingLoanDelta = 0;
+  $("loanActionPanel").classList.add("hidden");
+  $("pendingLoanText").textContent = "No loan paper change selected.";
+}
 
-  await updateDoc(playerRef(), {
-    money: increment(-25000),
-    loans: increment(-1),
-    loanOwed: increment(-25000),
-    updatedAt: serverTimestamp()
-  });
+async function applyLoanChange() {
+  if (!state.pendingLoanDelta) return;
 
-  await logActivity("Removed/paid 1 loan paper: −25K.", {
-    type: "loan",
-    action: "pay",
-    moneyChange: -25000,
-    owedChange: -25000
-  });
+  if (state.pendingLoanDelta > 0) {
+    await updateDoc(playerRef(), {
+      money: increment(20000),
+      loans: increment(1),
+      loanOwed: increment(25000),
+      updatedAt: serverTimestamp()
+    });
+
+    await logActivity("Added 1 loan paper: borrowed +20K, payback owed +25K.", {
+      type: "loan",
+      action: "take",
+      moneyChange: 20000,
+      owedChange: 25000
+    });
+  } else {
+    if ((state.currentPlayer?.loans || 0) <= 0) {
+      resetLoanAction();
+      return;
+    }
+
+    await updateDoc(playerRef(), {
+      money: increment(-25000),
+      loans: increment(-1),
+      loanOwed: increment(-25000),
+      updatedAt: serverTimestamp()
+    });
+
+    await logActivity("Removed/paid 1 loan paper: −25K.", {
+      type: "loan",
+      action: "pay",
+      moneyChange: -25000,
+      owedChange: -25000
+    });
+  }
+
+  resetLoanAction();
 }
 
 async function settleAllLoans() {
@@ -705,14 +768,19 @@ function wireEvents() {
 
   $("moneyAddBtn").addEventListener("click", () => setMoneyMode("add"));
   $("moneySubtractBtn").addEventListener("click", () => setMoneyMode("subtract"));
-  $("saveMoneyBtn").addEventListener("click", saveMoneyChange);
+  $("applyMoneyBtn").addEventListener("click", applyMoneyChange);
   $("cancelMoneyBtn").addEventListener("click", resetMoneyAction);
 
-  $("plusChildBtn").addEventListener("click", () => changeChildren(1));
-  $("minusChildBtn").addEventListener("click", () => changeChildren(-1));
+  $("stagePlusChildBtn").addEventListener("click", () => stageChildChange(1));
+  $("stageMinusChildBtn").addEventListener("click", () => stageChildChange(-1));
+  $("applyChildBtn").addEventListener("click", applyChildChange);
+  $("cancelChildBtn").addEventListener("click", resetChildAction);
 
-  $("takeLoanBtn").addEventListener("click", takeLoan);
-  $("payLoanBtn").addEventListener("click", payLoan);
+  $("stageTakeLoanBtn").addEventListener("click", () => stageLoanChange(1));
+  $("stagePayLoanBtn").addEventListener("click", () => stageLoanChange(-1));
+  $("applyLoanBtn").addEventListener("click", applyLoanChange);
+  $("cancelLoanBtn").addEventListener("click", resetLoanAction);
+
   $("settleAllLoansBtn").addEventListener("click", settleAllLoans);
   $("finalizeCashBtn").addEventListener("click", finalizeCash);
 

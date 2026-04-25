@@ -134,3 +134,23 @@ Money changes now require confirmation:
 3. Tap Save Change to apply it, or Cancel to discard it.
 
 This reduces accidental money changes during play.
+
+
+## Version v9 interaction update
+
+Money, child changes, and bank loan paper changes now use staged confirmation.
+
+Money:
+1. Select Add or Subtract.
+2. Choose a denomination.
+3. Tap Apply or Cancel.
+
+Children:
+1. Tap + Child or - Child.
+2. Tap Apply or Cancel.
+
+Loan papers:
+1. Tap +1 Loan Paper or -1 Loan Paper.
+2. Tap Apply or Cancel.
+
+The Sunset theme was changed to a red-based theme, and the service worker cache was updated to `life-tracker-v9`.
