@@ -30,7 +30,7 @@ let state = {
   moneyMode: "",
   pendingMoneyCounts: {},
   visualTheme: localStorage.getItem("lifeTracker.visualTheme") || "classic",
-  colorMode: localStorage.getItem("lifeTracker.colorMode") || "light",
+  colorMode: localStorage.getItem("lifeTracker.colorMode") || "dark",
   currentPlayer: null,
   players: [],
   activities: [],
