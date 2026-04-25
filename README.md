@@ -202,3 +202,19 @@ The row total is shown as:
 `tile denomination × count`
 
 The app now loads `style.css?v=14` and `app.js?v=14`.
+
+
+## Version v15 update
+
+Loan papers and LIFE tiles now support multiple staged changes before applying.
+
+Loan papers:
+- Tap +1 Loan Paper multiple times to stage multiple loan papers.
+- Tap -1 Loan Paper to reduce the pending count or stage payments.
+- Tap Apply once to save the full loan paper change.
+
+LIFE tiles:
+- Tap + multiple times on the same denomination to stage more than one tile.
+- Tap - to reduce the pending count before applying.
+- The row count and row total show the projected value before Apply.
+- Tap Apply once to save all pending LIFE tile changes.

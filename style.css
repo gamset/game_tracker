@@ -772,3 +772,17 @@ body.dark .badge.warn {
 #pendingTileText strong {
   font-weight: 900;
 }
+
+
+/* v15 multi-pending loan and tile counters */
+.pendingPreview {
+  margin-top: 0.4rem;
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.tileCounterRow.pendingTileRow,
+.counterRow.pendingLoanRow {
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}

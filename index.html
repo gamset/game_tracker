@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Game of Life Tracker</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="style.css?v=14" />
+  <link rel="stylesheet" href="style.css?v=15" />
   <meta name="theme-color" content="#1f2937" />
 </head>
 <body>
@@ -136,7 +136,7 @@
           <h3>Bank Loan Papers</h3>
           <p class="muted">Each loan paper gives 20K. Each loan paper must be paid back as 25K.</p>
           <div id="loanSummary" class="loanSummary"></div>
-          <p class="muted">Choose a loan paper change, then apply or cancel.</p>
+          <p class="muted">Use + or − to stage one or more loan papers, then apply or cancel.</p>
           <div class="counterRow">
             <button id="stagePayLoanBtn" class="warning">−1 Loan Paper</button>
             <strong id="loanCount">0</strong>
@@ -169,7 +169,7 @@
 
           <div class="endBlock">
             <h3>3. LIFE tile tally</h3>
-            <p class="muted">Use + or − beside each LIFE tile denomination. Tap Apply to save the pending tile change.</p>
+            <p class="muted">Use + or − beside each LIFE tile denomination to stage one or more tiles, then apply or cancel.</p>
 
             <div id="tileCounters" class="tileCounters"></div>
 
@@ -253,6 +253,6 @@
       }
     });
   </script>
-  <script type="module" src="app.js?v=14"></script>
+  <script type="module" src="app.js?v=15"></script>
 </body>
 </html>

@@ -512,60 +512,92 @@ async function changeChildren(delta) {
   });
 }
 
+function getPendingLoanChange() {
+  return state.pendingLoanChange || 0;
+}
+
+function renderPendingLoanChange() {
+  const change = getPendingLoanChange();
+  const currentLoans = state.currentPlayer?.loans || 0;
+  const projectedLoans = currentLoans + change;
+  const currentBorrowed = currentLoans * 20000;
+  const projectedBorrowed = projectedLoans * 20000;
+  const currentOwed = currentLoans * 25000;
+  const projectedOwed = projectedLoans * 25000;
+
+  const loanRow = $("loanCount")?.closest(".counterRow");
+  if (loanRow) {
+    loanRow.classList.toggle("pendingLoanRow", change !== 0);
+  }
+
+  if (change === 0) {
+    $("loanActionPanel").classList.add("hidden");
+    $("pendingLoanText").textContent = "No loan paper change selected.";
+    $("applyLoanBtn").disabled = true;
+    return;
+  }
+
+  $("loanActionPanel").classList.remove("hidden");
+  $("applyLoanBtn").disabled = false;
+
+  const actionWord = change > 0 ? "Add" : "Remove/pay";
+  const absChange = Math.abs(change);
+  const moneyChange = change > 0 ? change * 20000 : change * 25000;
+
+  $("pendingLoanText").innerHTML = `
+    <strong>${actionWord} ${absChange} loan paper${absChange === 1 ? "" : "s"}</strong><br>
+    Current loan papers: ${currentLoans}. After applying: ${projectedLoans}.<br>
+    Borrowed total: ${formatK(currentBorrowed)} → ${formatK(projectedBorrowed)}.<br>
+    Payback owed: ${formatK(currentOwed)} → ${formatK(projectedOwed)}.<br>
+    Money change when applied: ${moneyChange >= 0 ? "+" : "−"}${formatK(Math.abs(moneyChange))}.
+  `;
+}
+
 function stageLoanChange(delta) {
   const currentLoans = state.currentPlayer?.loans || 0;
-  if (delta < 0 && currentLoans <= 0) return;
+  const currentPending = getPendingLoanChange();
+  const nextPending = currentPending + delta;
+  const projectedLoans = currentLoans + nextPending;
 
-  state.pendingLoanDelta = delta;
-  $("loanActionPanel").classList.remove("hidden");
-  $("pendingLoanText").textContent = delta > 0
-    ? "Add 1 loan paper: receive 20K and add 25K payback owed. Tap Apply to save."
-    : "Pay/remove 1 loan paper: subtract 25K and reduce loan paper count. Tap Apply to save.";
+  if (projectedLoans < 0) return;
+
+  state.pendingLoanChange = nextPending;
+  renderPendingLoanChange();
 }
 
 function resetLoanAction() {
-  state.pendingLoanDelta = 0;
-  $("loanActionPanel").classList.add("hidden");
-  $("pendingLoanText").textContent = "No loan paper change selected.";
+  state.pendingLoanChange = 0;
+  renderPendingLoanChange();
 }
 
 async function applyLoanChange() {
-  if (!state.pendingLoanDelta) return;
+  const change = getPendingLoanChange();
+  if (!change) return;
 
-  if (state.pendingLoanDelta > 0) {
-    await updateDoc(playerRef(), {
-      money: increment(20000),
-      loans: increment(1),
-      loanOwed: increment(25000),
-      updatedAt: serverTimestamp()
-    });
-
-    await logActivity("Added 1 loan paper: borrowed +20K, payback owed +25K.", {
-      type: "loan",
-      action: "take",
-      moneyChange: 20000,
-      owedChange: 25000
-    });
-  } else {
-    if ((state.currentPlayer?.loans || 0) <= 0) {
-      resetLoanAction();
-      return;
-    }
-
-    await updateDoc(playerRef(), {
-      money: increment(-25000),
-      loans: increment(-1),
-      loanOwed: increment(-25000),
-      updatedAt: serverTimestamp()
-    });
-
-    await logActivity("Removed/paid 1 loan paper: −25K.", {
-      type: "loan",
-      action: "pay",
-      moneyChange: -25000,
-      owedChange: -25000
-    });
+  const currentLoans = state.currentPlayer?.loans || 0;
+  if (currentLoans + change < 0) {
+    resetLoanAction();
+    return;
   }
+
+  const moneyChange = change > 0 ? change * 20000 : change * 25000;
+  const owedChange = change * 25000;
+
+  await updateDoc(playerRef(), {
+    money: increment(moneyChange),
+    loans: increment(change),
+    loanOwed: increment(owedChange),
+    updatedAt: serverTimestamp()
+  });
+
+  const absChange = Math.abs(change);
+  await logActivity(`${change > 0 ? "Added" : "Removed/paid"} ${absChange} loan paper${absChange === 1 ? "" : "s"}: ${moneyChange >= 0 ? "+" : "−"}${formatK(Math.abs(moneyChange))}.`, {
+    type: "loan",
+    action: change > 0 ? "take_multiple" : "pay_multiple",
+    loanPaperChange: change,
+    moneyChange,
+    owedChange
+  });
 
   resetLoanAction();
 }
@@ -613,73 +645,106 @@ async function finalizeCash() {
   });
 }
 
+function getPendingTileDelta(amount) {
+  return state.pendingTileChanges[String(amount)] || 0;
+}
+
+function getPendingTileTotalChange() {
+  return TILE_DENOMS.reduce((total, amount) => {
+    return total + amount * getPendingTileDelta(amount);
+  }, 0);
+}
+
 function renderTileCountersFromPlayer() {
   const tiles = state.currentPlayer?.lifeTiles || {};
 
   for (const amount of TILE_DENOMS) {
-    const count = tiles[String(amount)] || 0;
+    const currentCount = tiles[String(amount)] || 0;
+    const pendingDelta = getPendingTileDelta(amount);
+    const projectedCount = currentCount + pendingDelta;
+
     const countEl = $(`tileCount-${amount}`);
     const totalEl = $(`tileTotal-${amount}`);
     const rowEl = document.querySelector(`[data-tile-row="${amount}"]`);
 
-    if (countEl) countEl.textContent = count;
-    if (totalEl) totalEl.textContent = formatK(amount * count);
+    if (countEl) countEl.textContent = projectedCount;
+    if (totalEl) totalEl.textContent = formatK(amount * projectedCount);
 
     if (rowEl) {
-      const isPending = state.pendingTileAmount === amount && state.pendingTileDelta !== 0;
-      rowEl.classList.toggle("pendingTileRow", isPending);
+      rowEl.classList.toggle("pendingTileRow", pendingDelta !== 0);
     }
   }
 }
 
-function stageTileChange(amount, delta) {
-  const tiles = state.currentPlayer?.lifeTiles || {};
-  const currentCount = tiles[String(amount)] || 0;
+function renderPendingTileChanges() {
+  renderTileCountersFromPlayer();
 
-  if (delta < 0 && currentCount <= 0) return;
+  const entries = TILE_DENOMS
+    .map((amount) => ({
+      amount,
+      delta: getPendingTileDelta(amount)
+    }))
+    .filter((entry) => entry.delta !== 0);
 
-  state.pendingTileAmount = amount;
-  state.pendingTileDelta = delta;
-
-  const projectedCount = currentCount + delta;
-  const actionWord = delta > 0 ? "Add" : "Remove";
-  const sign = delta > 0 ? "+" : "−";
+  if (entries.length === 0) {
+    $("tileActionPanel").classList.add("hidden");
+    $("pendingTileText").textContent = "No LIFE tile change selected.";
+    $("applyTileBtn").disabled = true;
+    return;
+  }
 
   $("tileActionPanel").classList.remove("hidden");
   $("applyTileBtn").disabled = false;
-  $("pendingTileText").innerHTML = `
-    <strong>${actionWord} 1 LIFE tile worth ${formatK(amount)}</strong><br>
-    Current count: ${currentCount}. After applying: ${projectedCount}.<br>
-    Pending LIFE tile change: ${sign}${formatK(amount)}.
-  `;
 
-  renderTileCountersFromPlayer();
+  const lines = entries.map(({ amount, delta }) => {
+    const sign = delta > 0 ? "+" : "−";
+    return `${formatK(amount)}: ${sign}${Math.abs(delta)} tile${Math.abs(delta) === 1 ? "" : "s"} (${sign}${formatK(Math.abs(delta * amount))})`;
+  });
+
+  const totalChange = getPendingTileTotalChange();
+  const totalSign = totalChange >= 0 ? "+" : "−";
+
+  $("pendingTileText").innerHTML = `
+    <strong>Pending LIFE tile changes</strong><br>
+    ${lines.join("<br>")}
+    <div class="pendingPreview">Total pending change: ${totalSign}${formatK(Math.abs(totalChange))}</div>
+  `;
+}
+
+function stageTileChange(amount, delta) {
+  const key = String(amount);
+  const tiles = state.currentPlayer?.lifeTiles || {};
+  const currentCount = tiles[key] || 0;
+  const currentPending = getPendingTileDelta(amount);
+  const nextPending = currentPending + delta;
+  const projectedCount = currentCount + nextPending;
+
+  if (projectedCount < 0) return;
+
+  if (nextPending === 0) {
+    delete state.pendingTileChanges[key];
+  } else {
+    state.pendingTileChanges[key] = nextPending;
+  }
+
+  renderPendingTileChanges();
 }
 
 function resetTileAction() {
-  state.pendingTileAmount = null;
-  state.pendingTileDelta = 0;
-
-  $("tileActionPanel").classList.add("hidden");
-  $("pendingTileText").textContent = "No LIFE tile change selected.";
-  $("applyTileBtn").disabled = true;
-
-  renderTileCountersFromPlayer();
+  state.pendingTileChanges = {};
+  renderPendingTileChanges();
 }
 
 async function applyTileChange() {
-  if (!state.pendingTileAmount || !state.pendingTileDelta) return;
+  const changes = { ...state.pendingTileChanges };
+  const entries = Object.entries(changes)
+    .map(([amount, delta]) => ({ amount: Number(amount), delta }))
+    .filter((entry) => entry.delta !== 0);
 
-  const amount = state.pendingTileAmount;
-  const delta = state.pendingTileDelta;
+  if (entries.length === 0) return;
 
-  await changeTileCount(amount, delta);
-  resetTileAction();
-}
-
-async function changeTileCount(amount, delta) {
-  const key = String(amount);
-  let actualDelta = 0;
+  let totalChange = 0;
+  const appliedEntries = [];
 
   await runTransaction(db, async (transaction) => {
     const ref = playerRef();
@@ -688,33 +753,52 @@ async function changeTileCount(amount, delta) {
 
     const data = snap.data();
     const lifeTiles = data.lifeTiles || {};
-    const currentCount = lifeTiles[key] || 0;
-    const nextCount = Math.max(0, currentCount + delta);
-    actualDelta = nextCount - currentCount;
 
-    if (actualDelta === 0) return;
+    for (const { amount, delta } of entries) {
+      const key = String(amount);
+      const currentCount = lifeTiles[key] || 0;
+      const nextCount = Math.max(0, currentCount + delta);
+      const actualDelta = nextCount - currentCount;
 
-    if (nextCount === 0) {
-      delete lifeTiles[key];
-    } else {
-      lifeTiles[key] = nextCount;
+      if (actualDelta === 0) continue;
+
+      if (nextCount === 0) {
+        delete lifeTiles[key];
+      } else {
+        lifeTiles[key] = nextCount;
+      }
+
+      totalChange += amount * actualDelta;
+      appliedEntries.push({ amount, delta: actualDelta });
     }
+
+    if (appliedEntries.length === 0) return;
 
     transaction.update(ref, {
       lifeTiles,
-      lifeTileTotal: increment(amount * actualDelta),
+      lifeTileTotal: increment(totalChange),
       updatedAt: serverTimestamp()
     });
   });
 
-  if (actualDelta !== 0) {
-    await logActivity(`${actualDelta > 0 ? "Added" : "Removed"} 1 LIFE tile worth ${formatK(amount)}.`, {
+  if (appliedEntries.length > 0) {
+    const description = appliedEntries
+      .map(({ amount, delta }) => `${delta > 0 ? "added" : "removed"} ${Math.abs(delta)} × ${formatK(amount)}`)
+      .join(", ");
+
+    await logActivity(`Updated LIFE tiles: ${description}.`, {
       type: "life_tile",
-      action: actualDelta > 0 ? "add" : "remove",
-      amount,
-      countChange: actualDelta
+      action: "update_multiple",
+      totalChange,
+      changes: appliedEntries
     });
   }
+
+  resetTileAction();
+}
+
+async function changeTileCount(amount, delta) {
+  stageTileChange(amount, delta);
 }
 
 async function markFinalTilesAwarded() {
