@@ -218,3 +218,8 @@ LIFE tiles:
 - Tap - to reduce the pending count before applying.
 - The row count and row total show the projected value before Apply.
 - Tap Apply once to save all pending LIFE tile changes.
+
+
+## Version v16 update
+
+Loan paper pending text was adjusted so the explanatory text is normal weight, while the staged count, such as `3 loan papers`, is bold.

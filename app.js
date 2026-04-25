@@ -545,7 +545,7 @@ function renderPendingLoanChange() {
   const moneyChange = change > 0 ? change * 20000 : change * 25000;
 
   $("pendingLoanText").innerHTML = `
-    <strong>${actionWord} ${absChange} loan paper${absChange === 1 ? "" : "s"}</strong><br>
+    ${actionWord} <strong>${absChange} loan paper${absChange === 1 ? "" : "s"}</strong>.<br>
     Current loan papers: ${currentLoans}. After applying: ${projectedLoans}.<br>
     Borrowed total: ${formatK(currentBorrowed)} → ${formatK(projectedBorrowed)}.<br>
     Payback owed: ${formatK(currentOwed)} → ${formatK(projectedOwed)}.<br>
