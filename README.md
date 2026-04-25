@@ -163,3 +163,8 @@ Children and loan papers now show Apply and Cancel buttons after a pending chang
 The Add and Subtract money buttons are both active-looking before selection. After one is selected, the selected option stays highlighted and the other option becomes grey.
 
 The service worker is disabled during active development to prevent stale cache problems. `index.html` now loads `style.css?v=10` and `app.js?v=10` for cache busting.
+
+
+## Version v11 fix
+
+This version removes a duplicate `setMoneyMode()` function that could break the staged money UI. It also adds safe event binding and a small fallback click handler for the welcome page button. The app is loaded with `app.js?v=11` and `style.css?v=11`.

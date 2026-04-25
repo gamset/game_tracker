@@ -718,23 +718,6 @@ function renderButtons() {
   }
 }
 
-function setMoneyMode(mode) {
-  state.moneyMode = mode;
-  state.pendingMoneyAmount = null;
-
-  $("moneyActionPanel").classList.remove("hidden");
-  $("moneyAddBtn").classList.toggle("selected", mode === "add");
-  $("moneySubtractBtn").classList.toggle("selected", mode === "subtract");
-
-  const actionWord = mode === "add" ? "Add money" : "Subtract money";
-  $("moneyActionLabel").textContent = `${actionWord}: select a denomination`;
-  $("pendingMoneyText").textContent = "No amount selected.";
-  $("saveMoneyBtn").disabled = true;
-
-  document.querySelectorAll("[data-money]").forEach((btn) => {
-    btn.classList.remove("selectedAmount");
-  });
-}
 
 function chooseGame(gameType) {
   state.selectedGameType = gameType;
@@ -749,47 +732,39 @@ function chooseGame(gameType) {
   }
 }
 
+function on(id, eventName, handler) {
+  const el = $(id);
+  if (el) el.addEventListener(eventName, handler);
+}
+
 function wireEvents() {
-  const themeSelect = $("themeSelect");
-  const modeToggleBtn = $("modeToggleBtn");
-  const chooseLifeGameBtn = $("chooseLifeGameBtn");
+  on("themeSelect", "change", (e) => setVisualTheme(e.target.value));
+  on("modeToggleBtn", "click", toggleColorMode);
+  on("chooseLifeGameBtn", "click", () => chooseGame("life"));
 
-  if (themeSelect) {
-    themeSelect.addEventListener("change", (e) => setVisualTheme(e.target.value));
-  }
+  on("createGameBtn", "click", createGame);
+  on("joinGameBtn", "click", joinGame);
+  on("leaveBtn", "click", leaveGame);
+  on("copyCodeBtn", "click", () => navigator.clipboard.writeText(state.gameCode));
 
-  if (modeToggleBtn) {
-    modeToggleBtn.addEventListener("click", toggleColorMode);
-  }
+  on("moneyAddBtn", "click", () => setMoneyMode("add"));
+  on("moneySubtractBtn", "click", () => setMoneyMode("subtract"));
+  on("applyMoneyBtn", "click", applyMoneyChange);
+  on("cancelMoneyBtn", "click", resetMoneyAction);
 
-  if (chooseLifeGameBtn) {
-    chooseLifeGameBtn.addEventListener("click", () => chooseGame("life"));
-  }
+  on("stagePlusChildBtn", "click", () => stageChildChange(1));
+  on("stageMinusChildBtn", "click", () => stageChildChange(-1));
+  on("applyChildBtn", "click", applyChildChange);
+  on("cancelChildBtn", "click", resetChildAction);
 
-  $("createGameBtn").addEventListener("click", createGame);
-  $("joinGameBtn").addEventListener("click", joinGame);
-  $("leaveBtn").addEventListener("click", leaveGame);
-  $("copyCodeBtn").addEventListener("click", () => navigator.clipboard.writeText(state.gameCode));
+  on("stageTakeLoanBtn", "click", () => stageLoanChange(1));
+  on("stagePayLoanBtn", "click", () => stageLoanChange(-1));
+  on("applyLoanBtn", "click", applyLoanChange);
+  on("cancelLoanBtn", "click", resetLoanAction);
 
-  $("moneyAddBtn").addEventListener("click", () => setMoneyMode("add"));
-  $("moneySubtractBtn").addEventListener("click", () => setMoneyMode("subtract"));
-  $("applyMoneyBtn").addEventListener("click", applyMoneyChange);
-  $("cancelMoneyBtn").addEventListener("click", resetMoneyAction);
-
-  $("stagePlusChildBtn").addEventListener("click", () => stageChildChange(1));
-  $("stageMinusChildBtn").addEventListener("click", () => stageChildChange(-1));
-  $("applyChildBtn").addEventListener("click", applyChildChange);
-  $("cancelChildBtn").addEventListener("click", resetChildAction);
-
-  $("stageTakeLoanBtn").addEventListener("click", () => stageLoanChange(1));
-  $("stagePayLoanBtn").addEventListener("click", () => stageLoanChange(-1));
-  $("applyLoanBtn").addEventListener("click", applyLoanChange);
-  $("cancelLoanBtn").addEventListener("click", resetLoanAction);
-
-  $("settleAllLoansBtn").addEventListener("click", settleAllLoans);
-  $("finalizeCashBtn").addEventListener("click", finalizeCash);
-
-  $("markFinalTilesBtn").addEventListener("click", markFinalTilesAwarded);
+  on("settleAllLoansBtn", "click", settleAllLoans);
+  on("finalizeCashBtn", "click", finalizeCash);
+  on("markFinalTilesBtn", "click", markFinalTilesAwarded);
 }
 
 let deferredPrompt = null;
@@ -799,7 +774,7 @@ window.addEventListener("beforeinstallprompt", (event) => {
   $("installBtn").classList.remove("hidden");
 });
 
-$("installBtn").addEventListener("click", async () => {
+on("installBtn", "click", async () => {
   if (!deferredPrompt) return;
   deferredPrompt.prompt();
   await deferredPrompt.userChoice;
