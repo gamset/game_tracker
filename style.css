@@ -717,3 +717,43 @@ body.dark .badge.warn {
   margin-top: 0.75rem;
   margin-bottom: 0.75rem;
 }
+
+
+/* v13 money denomination counters */
+.moneyCounters {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.moneyCounterRow {
+  display: grid;
+  grid-template-columns: 76px 1fr 48px 1fr 90px;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--cardSolid) 82%, var(--brand) 8%);
+}
+
+.moneyCounterRow strong {
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.moneyCounterRow .moneySubtotal {
+  text-align: right;
+  font-weight: 900;
+}
+
+@media (max-width: 760px) {
+  .moneyCounterRow {
+    grid-template-columns: 1fr 1fr 56px 1fr;
+  }
+
+  .moneyCounterRow .moneySubtotal {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+}

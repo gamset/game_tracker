@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Game of Life Tracker</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="style.css?v=12" />
+  <link rel="stylesheet" href="style.css?v=13" />
   <meta name="theme-color" content="#1f2937" />
 </head>
 <body>
@@ -109,7 +109,7 @@
 
           <div id="moneyActionPanel" class="actionPanel hidden">
             <p id="moneyActionLabel" class="actionLabel">Select an amount</p>
-            <div class="amountGrid" id="moneyButtons"></div>
+            <div id="moneyCounters" class="moneyCounters"></div>
             <div id="pendingMoneyText" class="pendingText">No amount selected.</div>
             <div class="confirmRow">
               <button id="applyMoneyBtn" disabled>Apply</button>
@@ -252,6 +252,6 @@
       }
     });
   </script>
-  <script type="module" src="app.js?v=12"></script>
+  <script type="module" src="app.js?v=13"></script>
 </body>
 </html>

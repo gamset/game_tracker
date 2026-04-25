@@ -28,7 +28,7 @@ let state = {
   playerId: localStorage.getItem("lifeTracker.playerId") || "",
   role: localStorage.getItem("lifeTracker.role") || "player",
   moneyMode: "",
-  pendingMoneyAmount: null,
+  pendingMoneyCounts: {},
   visualTheme: localStorage.getItem("lifeTracker.visualTheme") || "classic",
   colorMode: localStorage.getItem("lifeTracker.colorMode") || "light",
   currentPlayer: null,
@@ -379,22 +379,52 @@ function escapeHTML(value = "") {
     .replaceAll("'", "&#039;");
 }
 
-function selectPendingMoneyAmount(amount) {
-  state.pendingMoneyAmount = amount;
+function getPendingMoneyTotal() {
+  return MONEY_DENOMS.reduce((total, amount) => {
+    return total + amount * (state.pendingMoneyCounts[String(amount)] || 0);
+  }, 0);
+}
 
-  document.querySelectorAll("[data-money]").forEach((btn) => {
-    btn.classList.toggle("selectedAmount", Number(btn.dataset.money) === amount);
-  });
+function renderPendingMoneyCounters() {
+  if (!$("moneyCounters")) return;
 
+  for (const amount of MONEY_DENOMS) {
+    const count = state.pendingMoneyCounts[String(amount)] || 0;
+    const countEl = $(`moneyCount-${amount}`);
+    const subtotalEl = $(`moneySubtotal-${amount}`);
+
+    if (countEl) countEl.textContent = count;
+    if (subtotalEl) subtotalEl.textContent = formatK(amount * count);
+  }
+
+  const total = getPendingMoneyTotal();
   const actionWord = state.moneyMode === "add" ? "Add" : "Subtract";
   const sign = state.moneyMode === "add" ? "+" : "−";
-  $("pendingMoneyText").textContent = `${actionWord} ${sign}${formatK(amount)}. Tap Apply to save this change.`;
-  $("applyMoneyBtn").disabled = false;
+
+  $("pendingMoneyText").textContent = total > 0
+    ? `${actionWord} ${sign}${formatK(total)}. Tap Apply to save this change.`
+    : "No amount selected.";
+
+  $("applyMoneyBtn").disabled = total <= 0;
+}
+
+function changePendingMoneyDenomination(amount, delta) {
+  const key = String(amount);
+  const current = state.pendingMoneyCounts[key] || 0;
+  const next = Math.max(0, current + delta);
+
+  if (next === 0) {
+    delete state.pendingMoneyCounts[key];
+  } else {
+    state.pendingMoneyCounts[key] = next;
+  }
+
+  renderPendingMoneyCounters();
 }
 
 function resetMoneyAction() {
   state.moneyMode = "";
-  state.pendingMoneyAmount = null;
+  state.pendingMoneyCounts = {};
 
   $("moneyActionPanel").classList.add("hidden");
   $("moneyActionLabel").textContent = "Select an amount";
@@ -406,27 +436,28 @@ function resetMoneyAction() {
   $("moneyModeGroup").classList.add("moneyChoiceNeutral");
   $("moneyModeGroup").classList.remove("moneyChoiceActive");
 
-  document.querySelectorAll("[data-money]").forEach((btn) => {
-    btn.classList.remove("selectedAmount");
-  });
+  renderPendingMoneyCounters();
 }
 
 async function applyMoneyChange() {
-  if (!state.moneyMode || !state.pendingMoneyAmount) return;
+  if (!state.moneyMode) return;
 
-  const amount = state.pendingMoneyAmount;
+  const total = getPendingMoneyTotal();
+  if (total <= 0) return;
+
   const sign = state.moneyMode === "add" ? 1 : -1;
-  const change = sign * amount;
+  const change = sign * total;
 
   await updateDoc(playerRef(), {
     money: increment(change),
     updatedAt: serverTimestamp()
   });
 
-  await logActivity(`${state.moneyMode === "add" ? "Added" : "Subtracted"} ${formatK(amount)}.`, {
+  await logActivity(`${state.moneyMode === "add" ? "Added" : "Subtracted"} ${formatK(total)}.`, {
     type: "money",
     action: state.moneyMode,
-    amount: change
+    amount: change,
+    denominations: { ...state.pendingMoneyCounts }
   });
 
   resetMoneyAction();
@@ -434,7 +465,7 @@ async function applyMoneyChange() {
 
 function setMoneyMode(mode) {
   state.moneyMode = mode;
-  state.pendingMoneyAmount = null;
+  state.pendingMoneyCounts = {};
 
   $("moneyActionPanel").classList.remove("hidden");
   $("moneyModeGroup").classList.remove("moneyChoiceNeutral");
@@ -444,13 +475,8 @@ function setMoneyMode(mode) {
   $("moneySubtractBtn").classList.toggle("selected", mode === "subtract");
 
   const actionWord = mode === "add" ? "Add money" : "Subtract money";
-  $("moneyActionLabel").textContent = `${actionWord}: select a denomination`;
-  $("pendingMoneyText").textContent = "No amount selected.";
-  $("applyMoneyBtn").disabled = true;
-
-  document.querySelectorAll("[data-money]").forEach((btn) => {
-    btn.classList.remove("selectedAmount");
-  });
+  $("moneyActionLabel").textContent = `${actionWord}: use + and − to build the total`;
+  renderPendingMoneyCounters();
 }
 
 function stageChildChange(delta) {
@@ -712,8 +738,16 @@ function toggleColorMode() {
 }
 
 function renderButtons() {
-  $("moneyButtons").innerHTML = MONEY_DENOMS
-    .map((amount) => `<button data-money="${amount}">${formatK(amount)}</button>`)
+  $("moneyCounters").innerHTML = MONEY_DENOMS
+    .map((amount) => `
+      <div class="moneyCounterRow" data-money-row="${amount}">
+        <span><strong>${formatK(amount)}</strong></span>
+        <button data-money-minus="${amount}" class="ghost">−</button>
+        <strong id="moneyCount-${amount}">0</strong>
+        <button data-money-plus="${amount}">+</button>
+        <span class="moneySubtotal" id="moneySubtotal-${amount}">0K</span>
+      </div>
+    `)
     .join("");
 
   const tileCounters = $("tileCounters");
@@ -731,9 +765,11 @@ function renderButtons() {
       .join("");
   }
 
-  $("moneyButtons").addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-money]");
-    if (btn) selectPendingMoneyAmount(Number(btn.dataset.money));
+  $("moneyCounters").addEventListener("click", (e) => {
+    const plusBtn = e.target.closest("[data-money-plus]");
+    const minusBtn = e.target.closest("[data-money-minus]");
+    if (plusBtn) changePendingMoneyDenomination(Number(plusBtn.dataset.moneyPlus), 1);
+    if (minusBtn) changePendingMoneyDenomination(Number(minusBtn.dataset.moneyMinus), -1);
   });
 
   const tileCountersForEvents = $("tileCounters");

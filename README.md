@@ -179,3 +179,13 @@ LIFE tile changes now use the same staged confirmation pattern as money, childre
 3. Tap Apply to save it or Cancel to discard it.
 
 The app now loads `style.css?v=12` and `app.js?v=12`.
+
+
+## Version v13 update
+
+Money changes now use denomination counters.
+
+Example:
+To add 40K, choose Add, then tap `+` twice on the 20K row. The pending total becomes +40K. Tap Apply to save or Cancel to discard.
+
+If a wrong denomination is selected, tap `-` beside that denomination before applying.
