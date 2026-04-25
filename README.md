@@ -189,3 +189,16 @@ Example:
 To add 40K, choose Add, then tap `+` twice on the 20K row. The pending total becomes +40K. Tap Apply to save or Cancel to discard.
 
 If a wrong denomination is selected, tap `-` beside that denomination before applying.
+
+
+## Version v14 update
+
+Fixed LIFE tile counters.
+
+When you tap + or - beside a LIFE tile denomination, the app now shows a pending change. The displayed count and row total update after tapping Apply. Cancel discards the pending change.
+
+The row total is shown as:
+
+`tile denomination × count`
+
+The app now loads `style.css?v=14` and `app.js?v=14`.

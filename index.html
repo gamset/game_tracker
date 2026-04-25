@@ -169,13 +169,14 @@
 
           <div class="endBlock">
             <h3>3. LIFE tile tally</h3>
-            <p class="muted">Use the counters for each LIFE tile denomination. This reduces errors because players do not type values.</p>
+            <p class="muted">Use + or − beside each LIFE tile denomination. Tap Apply to save the pending tile change.</p>
+
             <div id="tileCounters" class="tileCounters"></div>
 
             <div id="tileActionPanel" class="actionPanel hidden">
               <div id="pendingTileText" class="pendingText">No LIFE tile change selected.</div>
               <div class="confirmRow">
-                <button id="applyTileBtn">Apply</button>
+                <button id="applyTileBtn" disabled>Apply</button>
                 <button id="cancelTileBtn" class="ghost">Cancel</button>
               </div>
             </div>

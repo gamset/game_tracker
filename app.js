@@ -30,7 +30,7 @@ let state = {
   moneyMode: "",
   pendingMoneyCounts: {},
   visualTheme: localStorage.getItem("lifeTracker.visualTheme") || "classic",
-  colorMode: localStorage.getItem("lifeTracker.colorMode") || "dark",
+  colorMode: localStorage.getItem("lifeTracker.colorMode") || "light",
   currentPlayer: null,
   players: [],
   activities: [],
@@ -307,13 +307,7 @@ function renderPlayer() {
     : `Finalized cash balance: <strong>${formatK(p.finalizedCash)}</strong>`;
 
   const tiles = p.lifeTiles || {};
-  for (const amount of TILE_DENOMS) {
-    const count = tiles[String(amount)] || 0;
-    const countEl = $(`tileCount-${amount}`);
-    const totalEl = $(`tileTotal-${amount}`);
-    if (countEl) countEl.textContent = count;
-    if (totalEl) totalEl.textContent = formatK(amount * count);
-  }
+  renderTileCountersFromPlayer();
 
   const tileRows = TILE_DENOMS
     .filter((amount) => tiles[String(amount)] > 0)
@@ -619,6 +613,25 @@ async function finalizeCash() {
   });
 }
 
+function renderTileCountersFromPlayer() {
+  const tiles = state.currentPlayer?.lifeTiles || {};
+
+  for (const amount of TILE_DENOMS) {
+    const count = tiles[String(amount)] || 0;
+    const countEl = $(`tileCount-${amount}`);
+    const totalEl = $(`tileTotal-${amount}`);
+    const rowEl = document.querySelector(`[data-tile-row="${amount}"]`);
+
+    if (countEl) countEl.textContent = count;
+    if (totalEl) totalEl.textContent = formatK(amount * count);
+
+    if (rowEl) {
+      const isPending = state.pendingTileAmount === amount && state.pendingTileDelta !== 0;
+      rowEl.classList.toggle("pendingTileRow", isPending);
+    }
+  }
+}
+
 function stageTileChange(amount, delta) {
   const tiles = state.currentPlayer?.lifeTiles || {};
   const currentCount = tiles[String(amount)] || 0;
@@ -628,23 +641,39 @@ function stageTileChange(amount, delta) {
   state.pendingTileAmount = amount;
   state.pendingTileDelta = delta;
 
+  const projectedCount = currentCount + delta;
+  const actionWord = delta > 0 ? "Add" : "Remove";
+  const sign = delta > 0 ? "+" : "−";
+
   $("tileActionPanel").classList.remove("hidden");
-  $("pendingTileText").textContent = delta > 0
-    ? `Add 1 LIFE tile worth ${formatK(amount)}. Tap Apply to save.`
-    : `Remove 1 LIFE tile worth ${formatK(amount)}. Tap Apply to save.`;
+  $("applyTileBtn").disabled = false;
+  $("pendingTileText").innerHTML = `
+    <strong>${actionWord} 1 LIFE tile worth ${formatK(amount)}</strong><br>
+    Current count: ${currentCount}. After applying: ${projectedCount}.<br>
+    Pending LIFE tile change: ${sign}${formatK(amount)}.
+  `;
+
+  renderTileCountersFromPlayer();
 }
 
 function resetTileAction() {
   state.pendingTileAmount = null;
   state.pendingTileDelta = 0;
+
   $("tileActionPanel").classList.add("hidden");
   $("pendingTileText").textContent = "No LIFE tile change selected.";
+  $("applyTileBtn").disabled = true;
+
+  renderTileCountersFromPlayer();
 }
 
 async function applyTileChange() {
   if (!state.pendingTileAmount || !state.pendingTileDelta) return;
 
-  await changeTileCount(state.pendingTileAmount, state.pendingTileDelta);
+  const amount = state.pendingTileAmount;
+  const delta = state.pendingTileDelta;
+
+  await changeTileCount(amount, delta);
   resetTileAction();
 }
 
@@ -777,8 +806,14 @@ function renderButtons() {
     tileCountersForEvents.addEventListener("click", (e) => {
       const plusBtn = e.target.closest("[data-tile-plus]");
       const minusBtn = e.target.closest("[data-tile-minus]");
-      if (plusBtn) stageTileChange(Number(plusBtn.dataset.tilePlus), 1);
-      if (minusBtn) stageTileChange(Number(minusBtn.dataset.tileMinus), -1);
+
+      if (plusBtn) {
+        stageTileChange(Number(plusBtn.dataset.tilePlus), 1);
+      }
+
+      if (minusBtn) {
+        stageTileChange(Number(minusBtn.dataset.tileMinus), -1);
+      }
     });
   }
 }

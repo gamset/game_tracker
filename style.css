@@ -757,3 +757,18 @@ body.dark .badge.warn {
     text-align: left;
   }
 }
+
+
+/* v14 LIFE tile staged fix */
+.tileCounterRow.pendingTileRow {
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.tileCounterRow .tileTotal {
+  font-variant-numeric: tabular-nums;
+}
+
+#pendingTileText strong {
+  font-weight: 900;
+}
