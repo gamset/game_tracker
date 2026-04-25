@@ -251,3 +251,29 @@ For payments:
 LIFE tile tally is now hidden until the player clicks `Finalize My Cash`.
 
 The LIFE tile counter also now shows projected counts and row totals immediately after pressing `+` or `-`. The actual Firebase value is saved only after pressing Apply.
+
+
+## Version v20 update
+
+Default color mode is now dark.
+
+After `Finalize My Cash` is clicked:
+- Money Add/Subtract is locked.
+- Child changes are locked.
+- Loan paper changes are locked.
+- LIFE tile tally becomes available.
+
+Before cash is finalized:
+- LIFE tile tally is hidden.
+
+LIFE tile counters were rebuilt so the count and row total update immediately as projected values when `+` or `-` is clicked. The values are saved only after Apply.
+
+
+## Version v21 update
+
+Fixed light/dark mode behavior.
+
+- New users default to dark mode.
+- The Light Mode / Dark Mode button now toggles based on the actual body class.
+- The selected mode is stored in local storage.
+- If a device previously stored light mode, it may remain light until the user taps Dark Mode or clears local storage.

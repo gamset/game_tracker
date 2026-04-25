@@ -30,7 +30,7 @@ let state = {
   moneyMode: "",
   pendingMoneyCounts: {},
   visualTheme: localStorage.getItem("lifeTracker.visualTheme") || "classic",
-  colorMode: localStorage.getItem("lifeTracker.colorMode") || "light",
+  colorMode: localStorage.getItem("lifeTracker.colorMode") || "dark",
   currentPlayer: null,
   players: [],
   activities: [],
@@ -278,6 +278,50 @@ function cleanupListeners() {
   }
 }
 
+function setControlsLocked(isLocked) {
+  const idsToDisable = [
+    "moneyAddBtn",
+    "moneySubtractBtn",
+    "applyMoneyBtn",
+    "cancelMoneyBtn",
+    "stageMinusChildBtn",
+    "stagePlusChildBtn",
+    "applyChildBtn",
+    "cancelChildBtn",
+    "stagePayLoanBtn",
+    "stageTakeLoanBtn",
+    "applyLoanBtn",
+    "cancelLoanBtn",
+    "settleAllLoansBtn"
+  ];
+
+  for (const id of idsToDisable) {
+    const el = $(id);
+    if (el) el.disabled = isLocked;
+  }
+
+  const moneyGroup = $("moneyModeGroup");
+  const childPanel = $("childActionPanel");
+  const loanPanel = $("loanActionPanel");
+
+  if (moneyGroup) moneyGroup.classList.toggle("lockedControl", isLocked);
+  if (childPanel) childPanel.classList.toggle("lockedControl", isLocked);
+  if (loanPanel) loanPanel.classList.toggle("lockedControl", isLocked);
+
+  let notice = $("cashFinalizedNotice");
+  if (!notice && $("playerSummary")) {
+    notice = document.createElement("div");
+    notice.id = "cashFinalizedNotice";
+    notice.className = "lockedNotice hidden";
+    notice.textContent = "Cash has been finalized. Money, children, and loan paper changes are locked.";
+    $("playerSummary").after(notice);
+  }
+
+  if (notice) {
+    notice.classList.toggle("hidden", !isLocked);
+  }
+}
+
 function renderPlayer() {
   const p = state.currentPlayer;
   if (!p) return;
@@ -299,8 +343,8 @@ function renderPlayer() {
     <div class="metric"><span>Total Borrowed</span><strong>${formatK((p.loans || 0) * 20000)}</strong></div>
     <div class="metric"><span>Total Payback</span><strong>${formatK(p.loanOwed || 0)}</strong></div>
   `;
-  $("stagePayLoanBtn").disabled = (p.loans || 0) <= 0;
-  $("settleAllLoansBtn").disabled = (p.loans || 0) <= 0;
+  $("stagePayLoanBtn").disabled = cashIsFinalized || (p.loans || 0) <= 0;
+  $("settleAllLoansBtn").disabled = cashIsFinalized || (p.loans || 0) <= 0;
 
   const cashIsFinalized = p.finalizedCash != null;
 
@@ -308,8 +352,14 @@ function renderPlayer() {
     ? "Cash has not been finalized."
     : `Finalized cash balance: <strong>${formatK(p.finalizedCash)}</strong>`;
 
-  $("lifeTileSection").classList.toggle("hidden", !cashIsFinalized);
-  $("lifeTileLockedText").classList.toggle("hidden", cashIsFinalized);
+  const lifeTileSection = $("lifeTileSection");
+  const lifeTileLockedText = $("lifeTileLockedText");
+
+  if (lifeTileSection) lifeTileSection.classList.toggle("hidden", !cashIsFinalized);
+  if (lifeTileLockedText) lifeTileLockedText.classList.toggle("hidden", cashIsFinalized);
+
+  setControlsLocked(cashIsFinalized);
+  $("finalizeCashBtn").disabled = cashIsFinalized;
 
   const tiles = p.lifeTiles || {};
   renderTileCountersFromPlayer();
@@ -463,6 +513,7 @@ async function applyMoneyChange() {
 }
 
 function setMoneyMode(mode) {
+  if (state.currentPlayer?.finalizedCash != null) return;
   state.moneyMode = mode;
   state.pendingMoneyCounts = {};
 
@@ -479,6 +530,7 @@ function setMoneyMode(mode) {
 }
 
 function stageChildChange(delta) {
+  if (state.currentPlayer?.finalizedCash != null) return;
   const currentChildren = state.currentPlayer?.children || 0;
   if (delta < 0 && currentChildren <= 0) return;
 
@@ -563,6 +615,7 @@ function renderPendingLoanChange() {
 }
 
 function stageLoanChange(delta) {
+  if (state.currentPlayer?.finalizedCash != null) return;
   const currentLoans = state.currentPlayer?.loans || 0;
   const currentPending = getPendingLoanChange();
   const nextPending = currentPending + delta;
@@ -612,6 +665,7 @@ async function applyLoanChange() {
 }
 
 async function settleAllLoans() {
+  if (state.currentPlayer?.finalizedCash != null) return;
   const p = state.currentPlayer;
   if (!p || (p.loans || 0) <= 0) return;
 
@@ -655,17 +709,7 @@ async function finalizeCash() {
 }
 
 function getPendingTileDelta(amount) {
-  return state.pendingTileChanges[String(amount)] || 0;
-}
-
-function getPendingTileTotalChange() {
-  return TILE_DENOMS.reduce((total, amount) => {
-    return total + amount * getPendingTileDelta(amount);
-  }, 0);
-}
-
-function getPendingTileDelta(amount) {
-  return state.pendingTileChanges[String(amount)] || 0;
+  return state.pendingTileChanges?.[String(amount)] || 0;
 }
 
 function getPendingTileTotalChange() {
@@ -678,20 +722,18 @@ function renderTileCountersFromPlayer() {
   const tiles = state.currentPlayer?.lifeTiles || {};
 
   for (const amount of TILE_DENOMS) {
-    const currentCount = tiles[String(amount)] || 0;
+    const key = String(amount);
+    const currentCount = tiles[key] || 0;
     const pendingDelta = getPendingTileDelta(amount);
     const projectedCount = currentCount + pendingDelta;
 
-    const countEl = $(`tileCount-${amount}`);
-    const totalEl = $(`tileTotal-${amount}`);
+    const countEl = document.getElementById(`tileCount-${amount}`);
+    const totalEl = document.getElementById(`tileTotal-${amount}`);
     const rowEl = document.querySelector(`[data-tile-row="${amount}"]`);
 
     if (countEl) countEl.textContent = projectedCount;
     if (totalEl) totalEl.textContent = formatK(amount * projectedCount);
-
-    if (rowEl) {
-      rowEl.classList.toggle("pendingTileRow", pendingDelta !== 0);
-    }
+    if (rowEl) rowEl.classList.toggle("pendingTileRow", pendingDelta !== 0);
   }
 }
 
@@ -699,21 +741,22 @@ function renderPendingTileChanges() {
   renderTileCountersFromPlayer();
 
   const entries = TILE_DENOMS
-    .map((amount) => ({
-      amount,
-      delta: getPendingTileDelta(amount)
-    }))
+    .map((amount) => ({ amount, delta: getPendingTileDelta(amount) }))
     .filter((entry) => entry.delta !== 0);
 
+  const panel = $("tileActionPanel");
+  const text = $("pendingTileText");
+  const applyBtn = $("applyTileBtn");
+
   if (entries.length === 0) {
-    $("tileActionPanel").classList.add("hidden");
-    $("pendingTileText").textContent = "No LIFE tile change selected.";
-    $("applyTileBtn").disabled = true;
+    if (panel) panel.classList.add("hidden");
+    if (text) text.textContent = "No LIFE tile change selected.";
+    if (applyBtn) applyBtn.disabled = true;
     return;
   }
 
-  $("tileActionPanel").classList.remove("hidden");
-  $("applyTileBtn").disabled = false;
+  if (panel) panel.classList.remove("hidden");
+  if (applyBtn) applyBtn.disabled = false;
 
   const lines = entries.map(({ amount, delta }) => {
     const sign = delta > 0 ? "+" : "−";
@@ -723,14 +766,18 @@ function renderPendingTileChanges() {
   const totalChange = getPendingTileTotalChange();
   const totalSign = totalChange >= 0 ? "+" : "−";
 
-  $("pendingTileText").innerHTML = `
-    <strong>Pending LIFE tile changes</strong><br>
-    ${lines.join("<br>")}
-    <div class="pendingPreview">Total pending change: ${totalSign}${formatK(Math.abs(totalChange))}</div>
-  `;
+  if (text) {
+    text.innerHTML = `
+      <strong>Pending LIFE tile changes</strong><br>
+      ${lines.join("<br>")}
+      <div class="pendingPreview">Total pending change: ${totalSign}${formatK(Math.abs(totalChange))}</div>
+    `;
+  }
 }
 
 function stageTileChange(amount, delta) {
+  if (!state.pendingTileChanges) state.pendingTileChanges = {};
+
   const key = String(amount);
   const tiles = state.currentPlayer?.lifeTiles || {};
   const currentCount = tiles[key] || 0;
@@ -755,7 +802,469 @@ function resetTileAction() {
 }
 
 async function applyTileChange() {
-  const entries = Object.entries({ ...state.pendingTileChanges })
+  const entries = Object.entries({ ...(state.pendingTileChanges || {}) })
+    .map(([amount, delta]) => ({ amount: Number(amount), delta }))
+    .filter((entry) => entry.delta !== 0);
+
+  if (entries.length === 0) return;
+
+  let totalChange = 0;
+  const appliedEntries = [];
+
+  await runTransaction(db, async (transaction) => {
+    const ref = playerRef();
+    const snap = await transaction.get(ref);
+    if (!snap.exists()) throw new Error("Player not found.");
+
+    const data = snap.data();
+    const lifeTiles = data.lifeTiles || {};
+
+    for (const { amount, delta } of entries) {
+      const key = String(amount);
+      const currentCount = lifeTiles[key] || 0;
+      const nextCount = Math.max(0, currentCount + delta);
+      const actualDelta = nextCount - currentCount;
+
+      if (actualDelta === 0) continue;
+
+      if (nextCount === 0) {
+        delete lifeTiles[key];
+      } else {
+        lifeTiles[key] = nextCount;
+      }
+
+      totalChange += amount * actualDelta;
+      appliedEntries.push({ amount, delta: actualDelta });
+    }
+
+    if (appliedEntries.length === 0) return;
+
+    transaction.update(ref, {
+      lifeTiles,
+      lifeTileTotal: increment(totalChange),
+      updatedAt: serverTimestamp()
+    });
+  });
+
+  if (appliedEntries.length > 0) {
+    const description = appliedEntries
+      .map(({ amount, delta }) => `${delta > 0 ? "added" : "removed"} ${Math.abs(delta)} × ${formatK(amount)}`)
+      .join(", ");
+
+    await logActivity(`Updated LIFE tiles: ${description}.`, {
+      type: "life_tile",
+      action: "update_multiple",
+      totalChange,
+      changes: appliedEntries
+    });
+  }
+
+  resetTileAction();
+}
+
+async function changeTileCount(amount, delta) {
+  stageTileChange(amount, delta);
+}
+
+async function markFinalTilesAwarded() {
+  await updateDoc(gameRef(), {
+    finalFourTilesAwarded: true,
+    updatedAt: serverTimestamp()
+  });
+
+  await logActivity("Host marked the final 4 LIFE tiles from Millionaire Estates as awarded.", {
+    type: "host",
+    action: "final_four_awarded"
+  });
+}
+
+function leaveGame() {
+  cleanupListeners();
+  clearLocalSession();
+  state.gameCode = "";
+  state.playerId = "";
+  state.role = "player";
+  state.currentPlayer = null;
+  state.players = [];
+  state.activities = [];
+  gameChooserView.classList.add("hidden");
+  gameView.classList.add("hidden");
+  setupView.classList.remove("hidden");
+}
+
+function applyVisualSettings() {
+  const savedTheme = localStorage.getItem("lifeTracker.visualTheme");
+  const savedMode = localStorage.getItem("lifeTracker.colorMode");
+
+  state.visualTheme = savedTheme || state.visualTheme || "classic";
+  state.colorMode = savedMode || state.colorMode || "dark";
+
+  document.body.dataset.theme = state.visualTheme;
+  document.body.classList.toggle("dark", state.colorMode === "dark");
+
+  const themeSelect = $("themeSelect");
+  const modeToggleBtn = $("modeToggleBtn");
+
+  if (themeSelect) {
+    themeSelect.value = state.visualTheme;
+  }
+
+  if (modeToggleBtn) {
+    modeToggleBtn.textContent = state.colorMode === "dark" ? "Light Mode" : "Dark Mode";
+  }
+}
+
+function setVisualTheme(theme) {
+  state.visualTheme = theme || "classic";
+  localStorage.setItem("lifeTracker.visualTheme", state.visualTheme);
+  applyVisualSettings();
+}
+
+function toggleColorMode() {
+  const currentMode = document.body.classList.contains("dark") ? "dark" : "light";
+  state.colorMode = currentMode === "dark" ? "light" : "dark";
+  localStorage.setItem("lifeTracker.colorMode", state.colorMode);
+  applyVisualSettings();
+}
+
+function renderButtons() {
+  const moneyCounters = $("moneyCounters");
+  if (moneyCounters) {
+    moneyCounters.innerHTML = MONEY_DENOMS
+      .map((amount) => `
+        <div class="moneyCounterRow" data-money-row="${amount}">
+          <span><strong>${formatK(amount)}</strong></span>
+          <button data-money-minus="${amount}" class="ghost">−</button>
+          <strong id="moneyCount-${amount}">0</strong>
+          <button data-money-plus="${amount}">+</button>
+          <span class="moneySubtotal" id="moneySubtotal-${amount}">0K</span>
+        </div>
+      `)
+      .join("");
+
+    moneyCounters.addEventListener("click", (e) => {
+      const plusBtn = e.target.closest("[data-money-plus]");
+      const minusBtn = e.target.closest("[data-money-minus]");
+      if (plusBtn) changePendingMoneyDenomination(Number(plusBtn.dataset.moneyPlus), 1);
+      if (minusBtn) changePendingMoneyDenomination(Number(minusBtn.dataset.moneyMinus), -1);
+    });
+  }
+
+  const tileCounters = $("tileCounters");
+  if (tileCounters) {
+    tileCounters.innerHTML = TILE_DENOMS
+      .map((amount) => `
+        <div class="tileCounterRow" data-tile-row="${amount}">
+          <span><strong>${formatK(amount)}</strong></span>
+          <button data-tile-minus="${amount}" class="ghost">−</button>
+          <strong id="tileCount-${amount}">0</strong>
+          <button data-tile-plus="${amount}">+</button>
+          <span class="tileTotal" id="tileTotal-${amount}">0K</span>
+        </div>
+      `)
+      .join("");
+
+    tileCounters.addEventListener("click", (e) => {
+      const plusBtn = e.target.closest("[data-tile-plus]");
+      const minusBtn = e.target.closest("[data-tile-minus]");
+      if (plusBtn) stageTileChange(Number(plusBtn.dataset.tilePlus), 1);
+      if (minusBtn) stageTileChange(Number(minusBtn.dataset.tileMinus), -1);
+    });
+  }
+}
+
+
+function setMoneyMode(mode) {
+  if (state.currentPlayer?.finalizedCash != null) return;
+  state.moneyMode = mode;
+  state.pendingMoneyCounts = {};
+
+  $("moneyActionPanel").classList.remove("hidden");
+  $("moneyModeGroup").classList.remove("moneyChoiceNeutral");
+  $("moneyModeGroup").classList.add("moneyChoiceActive");
+
+  $("moneyAddBtn").classList.toggle("selected", mode === "add");
+  $("moneySubtractBtn").classList.toggle("selected", mode === "subtract");
+
+  const actionWord = mode === "add" ? "Add money" : "Subtract money";
+  $("moneyActionLabel").textContent = `${actionWord}: use + and − to build the total`;
+  renderPendingMoneyCounters();
+}
+
+function stageChildChange(delta) {
+  if (state.currentPlayer?.finalizedCash != null) return;
+  const currentChildren = state.currentPlayer?.children || 0;
+  if (delta < 0 && currentChildren <= 0) return;
+
+  state.pendingChildDelta = delta;
+  $("childActionPanel").classList.remove("hidden");
+  $("pendingChildText").textContent = `${delta > 0 ? "Add" : "Remove"} 1 child. Tap Apply to save this change.`;
+}
+
+function resetChildAction() {
+  state.pendingChildDelta = 0;
+  $("childActionPanel").classList.add("hidden");
+  $("pendingChildText").textContent = "No child change selected.";
+}
+
+async function applyChildChange() {
+  if (!state.pendingChildDelta) return;
+  await changeChildren(state.pendingChildDelta);
+  resetChildAction();
+}
+
+async function changeChildren(delta) {
+  const p = state.currentPlayer;
+  const next = Math.max(0, (p.children || 0) + delta);
+  const actualDelta = next - (p.children || 0);
+  if (actualDelta === 0) return;
+
+  await updateDoc(playerRef(), {
+    children: next,
+    updatedAt: serverTimestamp()
+  });
+
+  await logActivity(`${actualDelta > 0 ? "Added" : "Removed"} 1 child.`, {
+    type: "child",
+    action: actualDelta > 0 ? "add" : "subtract",
+    amount: actualDelta
+  });
+}
+
+function getPendingLoanChange() {
+  return state.pendingLoanChange || 0;
+}
+
+function renderPendingLoanChange() {
+  const change = getPendingLoanChange();
+  const currentLoans = state.currentPlayer?.loans || 0;
+  const projectedLoans = currentLoans + change;
+  const currentBorrowed = currentLoans * 20000;
+  const projectedBorrowed = projectedLoans * 20000;
+  const currentOwed = currentLoans * 25000;
+  const projectedOwed = projectedLoans * 25000;
+
+  const loanRow = $("loanCount")?.closest(".counterRow");
+  if (loanRow) {
+    loanRow.classList.toggle("pendingLoanRow", change !== 0);
+  }
+
+  if (change === 0) {
+    $("loanActionPanel").classList.add("hidden");
+    $("pendingLoanText").textContent = "No loan paper change selected.";
+    $("applyLoanBtn").disabled = true;
+    return;
+  }
+
+  $("loanActionPanel").classList.remove("hidden");
+  $("applyLoanBtn").disabled = false;
+
+  const actionWord = change > 0 ? "Add" : "Remove/pay";
+  const absChange = Math.abs(change);
+  const moneyChange = change > 0 ? change * 20000 : change * 25000;
+
+  const firstLine = change > 0
+    ? `Add <strong>${absChange} loan paper${absChange === 1 ? "" : "s"}</strong>, borrow <strong>${formatK(change * 20000)}</strong>.`
+    : `Remove/pay <strong>${absChange} loan paper${absChange === 1 ? "" : "s"}</strong>, pay back <strong>${formatK(Math.abs(change * 25000))}</strong>.`;
+
+  $("pendingLoanText").innerHTML = `
+    ${firstLine}<br>
+    Current loan papers: ${currentLoans}. After applying: ${projectedLoans}.<br>
+    Borrowed total: ${formatK(currentBorrowed)} → ${formatK(projectedBorrowed)}.<br>
+    Payback owed: ${formatK(currentOwed)} → ${formatK(projectedOwed)}.<br>
+    Money change when applied: ${moneyChange >= 0 ? "+" : "−"}${formatK(Math.abs(moneyChange))}.
+  `;
+}
+
+function stageLoanChange(delta) {
+  if (state.currentPlayer?.finalizedCash != null) return;
+  const currentLoans = state.currentPlayer?.loans || 0;
+  const currentPending = getPendingLoanChange();
+  const nextPending = currentPending + delta;
+  const projectedLoans = currentLoans + nextPending;
+
+  if (projectedLoans < 0) return;
+
+  state.pendingLoanChange = nextPending;
+  renderPendingLoanChange();
+}
+
+function resetLoanAction() {
+  state.pendingLoanChange = 0;
+  renderPendingLoanChange();
+}
+
+async function applyLoanChange() {
+  const change = getPendingLoanChange();
+  if (!change) return;
+
+  const currentLoans = state.currentPlayer?.loans || 0;
+  if (currentLoans + change < 0) {
+    resetLoanAction();
+    return;
+  }
+
+  const moneyChange = change > 0 ? change * 20000 : change * 25000;
+  const owedChange = change * 25000;
+
+  await updateDoc(playerRef(), {
+    money: increment(moneyChange),
+    loans: increment(change),
+    loanOwed: increment(owedChange),
+    updatedAt: serverTimestamp()
+  });
+
+  const absChange = Math.abs(change);
+  await logActivity(`${change > 0 ? "Added" : "Removed/paid"} ${absChange} loan paper${absChange === 1 ? "" : "s"}: ${moneyChange >= 0 ? "+" : "−"}${formatK(Math.abs(moneyChange))}.`, {
+    type: "loan",
+    action: change > 0 ? "take_multiple" : "pay_multiple",
+    loanPaperChange: change,
+    moneyChange,
+    owedChange
+  });
+
+  resetLoanAction();
+}
+
+async function settleAllLoans() {
+  if (state.currentPlayer?.finalizedCash != null) return;
+  const p = state.currentPlayer;
+  if (!p || (p.loans || 0) <= 0) return;
+
+  const owed = p.loanOwed || 0;
+  const loans = p.loans || 0;
+
+  await updateDoc(playerRef(), {
+    money: increment(-owed),
+    loans: 0,
+    loanOwed: 0,
+    updatedAt: serverTimestamp()
+  });
+
+  await logActivity(`Paid all unpaid loans: ${loans} loan(s), −${formatK(owed)}.`, {
+    type: "loan",
+    action: "settle_all",
+    moneyChange: -owed,
+    owedChange: -owed
+  });
+}
+
+async function finalizeCash() {
+  const p = state.currentPlayer;
+  if (!p) return;
+
+  if ((p.loans || 0) > 0) {
+    const ok = confirm("This player still has unpaid loans. Finalize cash anyway?");
+    if (!ok) return;
+  }
+
+  await updateDoc(playerRef(), {
+    finalizedCash: p.money || 0,
+    finalizedAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+
+  await logActivity(`Finalized cash balance at ${formatK(p.money || 0)}.`, {
+    type: "finalize_cash",
+    finalizedCash: p.money || 0
+  });
+}
+
+function getPendingTileDelta(amount) {
+  return state.pendingTileChanges?.[String(amount)] || 0;
+}
+
+function getPendingTileTotalChange() {
+  return TILE_DENOMS.reduce((total, amount) => {
+    return total + amount * getPendingTileDelta(amount);
+  }, 0);
+}
+
+function renderTileCountersFromPlayer() {
+  const tiles = state.currentPlayer?.lifeTiles || {};
+
+  for (const amount of TILE_DENOMS) {
+    const key = String(amount);
+    const currentCount = tiles[key] || 0;
+    const pendingDelta = getPendingTileDelta(amount);
+    const projectedCount = currentCount + pendingDelta;
+
+    const countEl = document.getElementById(`tileCount-${amount}`);
+    const totalEl = document.getElementById(`tileTotal-${amount}`);
+    const rowEl = document.querySelector(`[data-tile-row="${amount}"]`);
+
+    if (countEl) countEl.textContent = projectedCount;
+    if (totalEl) totalEl.textContent = formatK(amount * projectedCount);
+    if (rowEl) rowEl.classList.toggle("pendingTileRow", pendingDelta !== 0);
+  }
+}
+
+function renderPendingTileChanges() {
+  renderTileCountersFromPlayer();
+
+  const entries = TILE_DENOMS
+    .map((amount) => ({ amount, delta: getPendingTileDelta(amount) }))
+    .filter((entry) => entry.delta !== 0);
+
+  const panel = $("tileActionPanel");
+  const text = $("pendingTileText");
+  const applyBtn = $("applyTileBtn");
+
+  if (entries.length === 0) {
+    if (panel) panel.classList.add("hidden");
+    if (text) text.textContent = "No LIFE tile change selected.";
+    if (applyBtn) applyBtn.disabled = true;
+    return;
+  }
+
+  if (panel) panel.classList.remove("hidden");
+  if (applyBtn) applyBtn.disabled = false;
+
+  const lines = entries.map(({ amount, delta }) => {
+    const sign = delta > 0 ? "+" : "−";
+    return `${formatK(amount)}: ${sign}${Math.abs(delta)} tile${Math.abs(delta) === 1 ? "" : "s"} (${sign}${formatK(Math.abs(delta * amount))})`;
+  });
+
+  const totalChange = getPendingTileTotalChange();
+  const totalSign = totalChange >= 0 ? "+" : "−";
+
+  if (text) {
+    text.innerHTML = `
+      <strong>Pending LIFE tile changes</strong><br>
+      ${lines.join("<br>")}
+      <div class="pendingPreview">Total pending change: ${totalSign}${formatK(Math.abs(totalChange))}</div>
+    `;
+  }
+}
+
+function stageTileChange(amount, delta) {
+  if (!state.pendingTileChanges) state.pendingTileChanges = {};
+
+  const key = String(amount);
+  const tiles = state.currentPlayer?.lifeTiles || {};
+  const currentCount = tiles[key] || 0;
+  const currentPending = getPendingTileDelta(amount);
+  const nextPending = currentPending + delta;
+  const projectedCount = currentCount + nextPending;
+
+  if (projectedCount < 0) return;
+
+  if (nextPending === 0) {
+    delete state.pendingTileChanges[key];
+  } else {
+    state.pendingTileChanges[key] = nextPending;
+  }
+
+  renderPendingTileChanges();
+}
+
+function resetTileAction() {
+  state.pendingTileChanges = {};
+  renderPendingTileChanges();
+}
+
+async function applyTileChange() {
+  const entries = Object.entries({ ...(state.pendingTileChanges || {}) })
     .map(([amount, delta]) => ({ amount: Number(amount), delta }))
     .filter((entry) => entry.delta !== 0);
 
@@ -940,33 +1449,49 @@ function on(id, eventName, handler) {
 }
 
 function wireEvents() {
-  on("themeSelect", "change", (e) => setVisualTheme(e.target.value));
-  on("modeToggleBtn", "click", toggleColorMode);
-  on("chooseLifeGameBtn", "click", () => chooseGame("life"));
+  const themeSelect = $("themeSelect");
+  const modeToggleBtn = $("modeToggleBtn");
+  const chooseLifeGameBtn = $("chooseLifeGameBtn");
 
-  on("createGameBtn", "click", createGame);
-  on("joinGameBtn", "click", joinGame);
-  on("leaveBtn", "click", leaveGame);
-  on("copyCodeBtn", "click", () => navigator.clipboard.writeText(state.gameCode));
+  if (themeSelect) {
+    themeSelect.addEventListener("change", (e) => setVisualTheme(e.target.value));
+  }
 
-  on("moneyAddBtn", "click", () => setMoneyMode("add"));
-  on("moneySubtractBtn", "click", () => setMoneyMode("subtract"));
-  on("applyMoneyBtn", "click", applyMoneyChange);
-  on("cancelMoneyBtn", "click", resetMoneyAction);
+  if (modeToggleBtn) {
+    modeToggleBtn.addEventListener("click", toggleColorMode);
+  }
 
-  on("stagePlusChildBtn", "click", () => stageChildChange(1));
-  on("stageMinusChildBtn", "click", () => stageChildChange(-1));
-  on("applyChildBtn", "click", applyChildChange);
-  on("cancelChildBtn", "click", resetChildAction);
+  if (chooseLifeGameBtn) {
+    chooseLifeGameBtn.addEventListener("click", () => chooseGame("life"));
+  }
 
-  on("stageTakeLoanBtn", "click", () => stageLoanChange(1));
-  on("stagePayLoanBtn", "click", () => stageLoanChange(-1));
-  on("applyLoanBtn", "click", applyLoanChange);
-  on("cancelLoanBtn", "click", resetLoanAction);
+  $("createGameBtn").addEventListener("click", createGame);
+  $("joinGameBtn").addEventListener("click", joinGame);
+  $("leaveBtn").addEventListener("click", leaveGame);
+  $("copyCodeBtn").addEventListener("click", () => navigator.clipboard.writeText(state.gameCode));
 
-  on("settleAllLoansBtn", "click", settleAllLoans);
-  on("finalizeCashBtn", "click", finalizeCash);
-  on("markFinalTilesBtn", "click", markFinalTilesAwarded);
+  $("moneyAddBtn").addEventListener("click", () => setMoneyMode("add"));
+  $("moneySubtractBtn").addEventListener("click", () => setMoneyMode("subtract"));
+  $("applyMoneyBtn").addEventListener("click", applyMoneyChange);
+  $("cancelMoneyBtn").addEventListener("click", resetMoneyAction);
+
+  $("stagePlusChildBtn").addEventListener("click", () => stageChildChange(1));
+  $("stageMinusChildBtn").addEventListener("click", () => stageChildChange(-1));
+  $("applyChildBtn").addEventListener("click", applyChildChange);
+  $("cancelChildBtn").addEventListener("click", resetChildAction);
+
+  $("stageTakeLoanBtn").addEventListener("click", () => stageLoanChange(1));
+  $("stagePayLoanBtn").addEventListener("click", () => stageLoanChange(-1));
+  $("applyLoanBtn").addEventListener("click", applyLoanChange);
+  $("cancelLoanBtn").addEventListener("click", resetLoanAction);
+
+  $("settleAllLoansBtn").addEventListener("click", settleAllLoans);
+  $("finalizeCashBtn").addEventListener("click", finalizeCash);
+
+  $("applyTileBtn").addEventListener("click", applyTileChange);
+  $("cancelTileBtn").addEventListener("click", resetTileAction);
+
+  $("markFinalTilesBtn").addEventListener("click", markFinalTilesAwarded);
 }
 
 let deferredPrompt = null;
@@ -989,6 +1514,11 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     registrations.forEach((registration) => registration.unregister());
   });
+}
+
+if (!localStorage.getItem("lifeTracker.colorMode")) {
+  localStorage.setItem("lifeTracker.colorMode", "dark");
+  state.colorMode = "dark";
 }
 
 applyVisualSettings();
