@@ -277,3 +277,16 @@ Fixed light/dark mode behavior.
 - The Light Mode / Dark Mode button now toggles based on the actual body class.
 - The selected mode is stored in local storage.
 - If a device previously stored light mode, it may remain light until the user taps Dark Mode or clears local storage.
+
+
+## Version v22 update
+
+Rebuilt app.js cleanly to remove duplicate functions and broken event handlers.
+
+Fixes:
+- Dark mode is forced as the default for this version unless the user changes it afterward.
+- Light/Dark toggle works again.
+- Create Game works again.
+- LIFE tile tally remains hidden until cash is finalized.
+- Money, children, and loan controls lock after cash finalization.
+- LIFE tile projected counts and totals update when staging + or - changes.

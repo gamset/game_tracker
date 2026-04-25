@@ -798,3 +798,31 @@ body.dark .badge.warn {
 .tileCounterRow.pendingTileRow .tileTotal {
   color: color-mix(in srgb, var(--accent) 70%, var(--text));
 }
+
+
+/* v20 finalized cash locking */
+.lockedControl,
+.lockedControl button {
+  opacity: 0.55;
+}
+
+.lockedNotice {
+  margin-top: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 14px;
+  background: var(--chip);
+  color: var(--muted);
+  font-weight: 800;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.tileCounterRow.pendingTileRow {
+  border-color: color-mix(in srgb, var(--accent) 75%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
