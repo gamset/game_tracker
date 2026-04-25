@@ -117,3 +117,9 @@ The app includes light and dark mode plus five color themes:
 - Candy
 
 Theme and mode choices are saved on each device using local storage.
+
+## If the button does nothing after updating files
+
+This is usually caused by the browser loading an old cached file from the service worker.
+This version uses `life-tracker-v7` and calls `skipWaiting()` and `clients.claim()` to reduce stale-cache problems.
+After uploading, hard refresh the GitHub Pages link or open it in a private browser window once.

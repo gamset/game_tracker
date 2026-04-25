@@ -10,11 +10,25 @@
 </head>
 <body>
   <header class="topbar">
-    <div>
-      <h1>Game of Life Tracker</h1>
-      <p>Money, loans, children, LIFE tiles, and host activity log</p>
+    <div class="brandBlock">
+      <div class="appMark">$</div>
+      <div>
+        <h1>Game Table Tracker</h1>
+        <p>Shared board-game tracking for money, loans, children, tiles, and host activity</p>
+      </div>
     </div>
-    <button id="installBtn" class="ghost hidden">Install</button>
+
+    <div class="topControls">
+      <select id="themeSelect" aria-label="Choose color theme">
+        <option value="classic">Classic</option>
+        <option value="ocean">Ocean</option>
+        <option value="sunset">Sunset</option>
+        <option value="forest">Forest</option>
+        <option value="candy">Candy</option>
+      </select>
+      <button id="modeToggleBtn" class="ghost" aria-label="Toggle light or dark mode">Dark Mode</button>
+      <button id="installBtn" class="ghost hidden">Install</button>
+    </div>
   </header>
 
   <main class="container">

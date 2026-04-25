@@ -582,29 +582,35 @@ function renderButtons() {
     .map((amount) => `<button data-money="${amount}">${formatK(amount)}</button>`)
     .join("");
 
-  $("tileCounters").innerHTML = TILE_DENOMS
-    .map((amount) => `
-      <div class="tileCounterRow" data-tile-row="${amount}">
-        <span><strong>${formatK(amount)}</strong></span>
-        <button data-tile-minus="${amount}" class="ghost">−</button>
-        <strong id="tileCount-${amount}">0</strong>
-        <button data-tile-plus="${amount}">+</button>
-        <span class="tileTotal" id="tileTotal-${amount}">0K</span>
-      </div>
-    `)
-    .join("");
+  const tileCounters = $("tileCounters");
+  if (tileCounters) {
+    tileCounters.innerHTML = TILE_DENOMS
+      .map((amount) => `
+        <div class="tileCounterRow" data-tile-row="${amount}">
+          <span><strong>${formatK(amount)}</strong></span>
+          <button data-tile-minus="${amount}" class="ghost">−</button>
+          <strong id="tileCount-${amount}">0</strong>
+          <button data-tile-plus="${amount}">+</button>
+          <span class="tileTotal" id="tileTotal-${amount}">0K</span>
+        </div>
+      `)
+      .join("");
+  }
 
   $("moneyButtons").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-money]");
     if (btn) changeMoney(Number(btn.dataset.money));
   });
 
-  $("tileCounters").addEventListener("click", (e) => {
-    const plusBtn = e.target.closest("[data-tile-plus]");
-    const minusBtn = e.target.closest("[data-tile-minus]");
-    if (plusBtn) changeTileCount(Number(plusBtn.dataset.tilePlus), 1);
-    if (minusBtn) changeTileCount(Number(minusBtn.dataset.tileMinus), -1);
-  });
+  const tileCountersForEvents = $("tileCounters");
+  if (tileCountersForEvents) {
+    tileCountersForEvents.addEventListener("click", (e) => {
+      const plusBtn = e.target.closest("[data-tile-plus]");
+      const minusBtn = e.target.closest("[data-tile-minus]");
+      if (plusBtn) changeTileCount(Number(plusBtn.dataset.tilePlus), 1);
+      if (minusBtn) changeTileCount(Number(minusBtn.dataset.tileMinus), -1);
+    });
+  }
 }
 
 function setMoneyMode(mode) {
@@ -627,9 +633,22 @@ function chooseGame(gameType) {
 }
 
 function wireEvents() {
-  $("themeSelect").addEventListener("change", (e) => setVisualTheme(e.target.value));
-  $("modeToggleBtn").addEventListener("click", toggleColorMode);
-  $("chooseLifeGameBtn").addEventListener("click", () => chooseGame("life"));
+  const themeSelect = $("themeSelect");
+  const modeToggleBtn = $("modeToggleBtn");
+  const chooseLifeGameBtn = $("chooseLifeGameBtn");
+
+  if (themeSelect) {
+    themeSelect.addEventListener("change", (e) => setVisualTheme(e.target.value));
+  }
+
+  if (modeToggleBtn) {
+    modeToggleBtn.addEventListener("click", toggleColorMode);
+  }
+
+  if (chooseLifeGameBtn) {
+    chooseLifeGameBtn.addEventListener("click", () => chooseGame("life"));
+  }
+
   $("createGameBtn").addEventListener("click", createGame);
   $("joinGameBtn").addEventListener("click", joinGame);
   $("leaveBtn").addEventListener("click", leaveGame);
