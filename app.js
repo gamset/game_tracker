@@ -545,7 +545,7 @@ function renderPendingLoanChange() {
   const moneyChange = change > 0 ? change * 20000 : change * 25000;
 
   const firstLineAmount = change > 0
-    ? `+${formatK(change * 20000)} borrowed`
+    ? `borrow +${formatK(change * 20000)}`
     : `−${formatK(Math.abs(change * 25000))} paid back`;
 
   $("pendingLoanText").innerHTML = `
