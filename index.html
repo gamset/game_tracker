@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Game of Life Tracker</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=10" />
   <meta name="theme-color" content="#1f2937" />
 </head>
 <body>
@@ -100,8 +100,9 @@
           <div id="playerSummary" class="summary"></div>
 
           <h3>Money</h3>
-          <p class="muted">Choose Add or Subtract first, select an amount, then apply or cancel.</p>
-          <div class="segmented">
+          <p class="muted">Choose Add or Subtract first. Then select an amount and apply or cancel.</p>
+
+          <div class="segmented moneyChoiceNeutral" id="moneyModeGroup">
             <button id="moneyAddBtn">Add</button>
             <button id="moneySubtractBtn">Subtract</button>
           </div>
@@ -117,6 +118,7 @@
           </div>
 
           <h3>Children</h3>
+          <p class="muted">Choose a child change, then apply or cancel.</p>
           <div class="counterRow">
             <button id="stageMinusChildBtn">− Child</button>
             <strong id="childCount">0</strong>
@@ -134,6 +136,7 @@
           <h3>Bank Loan Papers</h3>
           <p class="muted">Each loan paper gives 20K. Each loan paper must be paid back as 25K.</p>
           <div id="loanSummary" class="loanSummary"></div>
+          <p class="muted">Choose a loan paper change, then apply or cancel.</p>
           <div class="counterRow">
             <button id="stagePayLoanBtn" class="warning">−1 Loan Paper</button>
             <strong id="loanCount">0</strong>
@@ -219,6 +222,6 @@
     </div>
   </template>
 
-  <script type="module" src="app.js"></script>
+  <script type="module" src="app.js?v=10"></script>
 </body>
 </html>

@@ -154,3 +154,12 @@ Loan papers:
 2. Tap Apply or Cancel.
 
 The Sunset theme was changed to a red-based theme, and the service worker cache was updated to `life-tracker-v9`.
+
+
+## Version v10 update
+
+Children and loan papers now show Apply and Cancel buttons after a pending change is selected.
+
+The Add and Subtract money buttons are both active-looking before selection. After one is selected, the selected option stays highlighted and the other option becomes grey.
+
+The service worker is disabled during active development to prevent stale cache problems. `index.html` now loads `style.css?v=10` and `app.js?v=10` for cache busting.

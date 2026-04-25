@@ -403,6 +403,8 @@ function resetMoneyAction() {
 
   $("moneyAddBtn").classList.remove("selected");
   $("moneySubtractBtn").classList.remove("selected");
+  $("moneyModeGroup").classList.add("moneyChoiceNeutral");
+  $("moneyModeGroup").classList.remove("moneyChoiceActive");
 
   document.querySelectorAll("[data-money]").forEach((btn) => {
     btn.classList.remove("selectedAmount");
@@ -435,6 +437,9 @@ function setMoneyMode(mode) {
   state.pendingMoneyAmount = null;
 
   $("moneyActionPanel").classList.remove("hidden");
+  $("moneyModeGroup").classList.remove("moneyChoiceNeutral");
+  $("moneyModeGroup").classList.add("moneyChoiceActive");
+
   $("moneyAddBtn").classList.toggle("selected", mode === "add");
   $("moneySubtractBtn").classList.toggle("selected", mode === "subtract");
 
@@ -802,8 +807,11 @@ $("installBtn").addEventListener("click", async () => {
   $("installBtn").classList.add("hidden");
 });
 
+// Service worker disabled during active development to avoid stale cached files.
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    registrations.forEach((registration) => registration.unregister());
+  });
 }
 
 applyVisualSettings();
