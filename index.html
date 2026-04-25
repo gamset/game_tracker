@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Game of Life Tracker</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+  <meta name="theme-color" content="#1f2937" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Game of Life Tracker</h1>
+      <p>Money, loans, children, LIFE tiles, and host activity log</p>
+    </div>
+    <button id="installBtn" class="ghost hidden">Install</button>
+  </header>
+
+  <main class="container">
+    <section id="gameChooserView" class="card">
+      <h2>Choose a Game</h2>
+      <p class="muted">Select which board game you want to track. More games can be added later.</p>
+
+      <div class="gameChoiceGrid">
+        <button id="chooseLifeGameBtn" class="gameChoice">
+          <strong>The Game of Life</strong>
+          <span>Track money, loan papers, children, finalized cash, and LIFE tiles.</span>
+        </button>
+
+        <button class="gameChoice disabled" disabled>
+          <strong>More games coming later</strong>
+          <span>This app is set up so additional games can be added in the future.</span>
+        </button>
+      </div>
+    </section>
+
+    <section id="setupView" class="card hidden">
+      <h2>Start or Join The Game of Life</h2>
+      <p class="muted">Use one shared game code so all players and the host see the same Game of Life session.</p>
+
+      <div class="grid two">
+        <div class="panel">
+          <h3>Create game as host</h3>
+          <label>Your player name</label>
+          <input id="hostName" placeholder="Example: Anna" />
+          <label>Starting money</label>
+          <select id="startingMoney">
+            <option value="10000" selected>10K</option>
+            <option value="0">0K</option>
+            <option value="200000">200K</option>
+            <option value="500000">500K</option>
+            <option value="1000000">1,000K</option>
+          </select>
+          <button id="createGameBtn">Create Game</button>
+        </div>
+
+        <div class="panel">
+          <h3>Join existing game</h3>
+          <label>Game code</label>
+          <input id="joinCode" placeholder="Example: LIFE-4821" />
+          <label>Your player name</label>
+          <input id="joinName" placeholder="Example: Ben" />
+          <button id="joinGameBtn">Join Game</button>
+        </div>
+      </div>
+
+      <div id="setupError" class="error hidden"></div>
+    </section>
+
+    <section id="gameView" class="hidden">
+      <div class="gameHeader card">
+        <div>
+          <h2 id="gameTitle">Game</h2>
+          <p class="muted">Share this game code with players: <strong id="gameCodeLabel"></strong></p>
+        </div>
+        <div class="headerActions">
+          <button id="copyCodeBtn" class="ghost">Copy Code</button>
+          <button id="leaveBtn" class="danger ghost">Leave</button>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <section class="card">
+          <h2>Your Player Board</h2>
+          <div id="playerSummary" class="summary"></div>
+
+          <h3>Money</h3>
+          <div class="segmented">
+            <button id="moneyAddBtn" class="selected">Add</button>
+            <button id="moneySubtractBtn">Subtract</button>
+          </div>
+
+          <div class="amountGrid" id="moneyButtons"></div>
+
+          <h3>Children</h3>
+          <div class="counterRow">
+            <button id="minusChildBtn">− Child</button>
+            <strong id="childCount">0</strong>
+            <button id="plusChildBtn">+ Child</button>
+          </div>
+
+          <h3>Bank Loan Papers</h3>
+          <p class="muted">Each loan paper gives 20K. Each loan paper must be paid back as 25K.</p>
+          <div id="loanSummary" class="loanSummary"></div>
+          <div class="counterRow">
+            <button id="payLoanBtn" class="warning">−1 Loan Paper</button>
+            <strong id="loanCount">0</strong>
+            <button id="takeLoanBtn">+1 Loan Paper</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>End Game</h2>
+          <p class="muted">Order: settle unpaid loans, finalize cash balance, rank cash for Millionaire Estates, then add LIFE tiles.</p>
+
+          <div class="endBlock">
+            <h3>1. Loans before cash balance</h3>
+            <button id="settleAllLoansBtn" class="warning">Pay All Loans</button>
+          </div>
+
+          <div class="endBlock">
+            <h3>2. Finalized cash balance</h3>
+            <button id="finalizeCashBtn">Finalize My Cash</button>
+            <p id="finalizedCashText" class="muted"></p>
+          </div>
+
+          <div class="endBlock">
+            <h3>3. LIFE tile tally</h3>
+            <p class="muted">Use the counters for each LIFE tile denomination. This reduces errors because players do not type values.</p>
+            <div id="tileCounters" class="tileCounters"></div>
+            <div id="tileSummary" class="tileSummary"></div>
+          </div>
+        </section>
+      </div>
+
+      <section id="hostView" class="card hidden">
+        <div class="hostTitle">
+          <div>
+            <h2>Host Dashboard</h2>
+            <p class="muted">The host is also a player, but can review all player activity.</p>
+          </div>
+          <button id="markFinalTilesBtn" class="ghost">Mark Final 4 LIFE Tiles Awarded</button>
+        </div>
+
+        <h3>Players</h3>
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>Money</th>
+                <th>Children</th>
+                <th>Loan Papers</th>
+                <th>Borrowed</th>
+                <th>Payback Owed</th>
+                <th>Final Cash</th>
+                <th>LIFE Tiles</th>
+                <th>Final Score</th>
+              </tr>
+            </thead>
+            <tbody id="playersTable"></tbody>
+          </table>
+        </div>
+
+        <h3>Cash Ranking for Millionaire Estates</h3>
+        <div id="cashRanking" class="ranking"></div>
+
+        <h3>Activity Log</h3>
+        <div id="activityLog" class="activity"></div>
+      </section>
+    </section>
+  </main>
+
+  <template id="activityItemTemplate">
+    <div class="activityItem">
+      <strong></strong>
+      <span></span>
+      <small></small>
+    </div>
+  </template>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

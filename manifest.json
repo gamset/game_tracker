@@ -1,0 +1,15 @@
+{
+  "name": "Game of Life Tracker",
+  "short_name": "Life Tracker",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f4f5f7",
+  "theme_color": "#1f2937",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
