@@ -710,3 +710,10 @@ body.dark .badge.warn {
   outline-offset: 2px;
   transform: translateY(-1px);
 }
+
+
+/* v12 LIFE tile confirmation */
+#tileActionPanel {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}

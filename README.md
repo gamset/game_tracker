@@ -168,3 +168,14 @@ The service worker is disabled during active development to prevent stale cache 
 ## Version v11 fix
 
 This version removes a duplicate `setMoneyMode()` function that could break the staged money UI. It also adds safe event binding and a small fallback click handler for the welcome page button. The app is loaded with `app.js?v=11` and `style.css?v=11`.
+
+
+## Version v12 update
+
+LIFE tile changes now use the same staged confirmation pattern as money, children, and loan papers.
+
+1. Tap + or - beside a LIFE tile denomination.
+2. Review the pending change.
+3. Tap Apply to save it or Cancel to discard it.
+
+The app now loads `style.css?v=12` and `app.js?v=12`.

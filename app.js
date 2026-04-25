@@ -593,6 +593,35 @@ async function finalizeCash() {
   });
 }
 
+function stageTileChange(amount, delta) {
+  const tiles = state.currentPlayer?.lifeTiles || {};
+  const currentCount = tiles[String(amount)] || 0;
+
+  if (delta < 0 && currentCount <= 0) return;
+
+  state.pendingTileAmount = amount;
+  state.pendingTileDelta = delta;
+
+  $("tileActionPanel").classList.remove("hidden");
+  $("pendingTileText").textContent = delta > 0
+    ? `Add 1 LIFE tile worth ${formatK(amount)}. Tap Apply to save.`
+    : `Remove 1 LIFE tile worth ${formatK(amount)}. Tap Apply to save.`;
+}
+
+function resetTileAction() {
+  state.pendingTileAmount = null;
+  state.pendingTileDelta = 0;
+  $("tileActionPanel").classList.add("hidden");
+  $("pendingTileText").textContent = "No LIFE tile change selected.";
+}
+
+async function applyTileChange() {
+  if (!state.pendingTileAmount || !state.pendingTileDelta) return;
+
+  await changeTileCount(state.pendingTileAmount, state.pendingTileDelta);
+  resetTileAction();
+}
+
 async function changeTileCount(amount, delta) {
   const key = String(amount);
   let actualDelta = 0;
@@ -712,8 +741,8 @@ function renderButtons() {
     tileCountersForEvents.addEventListener("click", (e) => {
       const plusBtn = e.target.closest("[data-tile-plus]");
       const minusBtn = e.target.closest("[data-tile-minus]");
-      if (plusBtn) changeTileCount(Number(plusBtn.dataset.tilePlus), 1);
-      if (minusBtn) changeTileCount(Number(minusBtn.dataset.tileMinus), -1);
+      if (plusBtn) stageTileChange(Number(plusBtn.dataset.tilePlus), 1);
+      if (minusBtn) stageTileChange(Number(minusBtn.dataset.tileMinus), -1);
     });
   }
 }
