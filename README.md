@@ -233,3 +233,21 @@ Examples:
 - `Add 1 loan paper, +20K borrowed.`
 - `Add 3 loan papers, +60K borrowed.`
 - `Remove/pay 2 loan papers, -50K paid back.`
+
+
+## Version v18 update
+
+Loan paper pending text now uses simplified wording.
+
+Example:
+`Add 5 loan papers, borrow 100K.`
+
+For payments:
+`Remove/pay 2 loan papers, pay back 50K.`
+
+
+## Version v19 update
+
+LIFE tile tally is now hidden until the player clicks `Finalize My Cash`.
+
+The LIFE tile counter also now shows projected counts and row totals immediately after pressing `+` or `-`. The actual Firebase value is saved only after pressing Apply.

@@ -786,3 +786,15 @@ body.dark .badge.warn {
   border-color: color-mix(in srgb, var(--accent) 65%, var(--line));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
+
+
+/* v19 finalized cash gate and tile projection */
+.tileCounterRow.pendingTileRow {
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.tileCounterRow.pendingTileRow strong[id^="tileCount-"],
+.tileCounterRow.pendingTileRow .tileTotal {
+  color: color-mix(in srgb, var(--accent) 70%, var(--text));
+}

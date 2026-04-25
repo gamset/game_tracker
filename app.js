@@ -302,9 +302,14 @@ function renderPlayer() {
   $("stagePayLoanBtn").disabled = (p.loans || 0) <= 0;
   $("settleAllLoansBtn").disabled = (p.loans || 0) <= 0;
 
-  $("finalizedCashText").innerHTML = p.finalizedCash == null
+  const cashIsFinalized = p.finalizedCash != null;
+
+  $("finalizedCashText").innerHTML = !cashIsFinalized
     ? "Cash has not been finalized."
     : `Finalized cash balance: <strong>${formatK(p.finalizedCash)}</strong>`;
+
+  $("lifeTileSection").classList.toggle("hidden", !cashIsFinalized);
+  $("lifeTileLockedText").classList.toggle("hidden", cashIsFinalized);
 
   const tiles = p.lifeTiles || {};
   renderTileCountersFromPlayer();
@@ -544,12 +549,12 @@ function renderPendingLoanChange() {
   const absChange = Math.abs(change);
   const moneyChange = change > 0 ? change * 20000 : change * 25000;
 
-  const firstLineAmount = change > 0
-    ? `borrow +${formatK(change * 20000)}`
-    : `−${formatK(Math.abs(change * 25000))} paid back`;
+  const firstLine = change > 0
+    ? `Add <strong>${absChange} loan paper${absChange === 1 ? "" : "s"}</strong>, borrow <strong>${formatK(change * 20000)}</strong>.`
+    : `Remove/pay <strong>${absChange} loan paper${absChange === 1 ? "" : "s"}</strong>, pay back <strong>${formatK(Math.abs(change * 25000))}</strong>.`;
 
   $("pendingLoanText").innerHTML = `
-    ${actionWord} <strong>${absChange} loan paper${absChange === 1 ? "" : "s"}</strong>, <strong>${firstLineAmount}</strong>.<br>
+    ${firstLine}<br>
     Current loan papers: ${currentLoans}. After applying: ${projectedLoans}.<br>
     Borrowed total: ${formatK(currentBorrowed)} → ${formatK(projectedBorrowed)}.<br>
     Payback owed: ${formatK(currentOwed)} → ${formatK(projectedOwed)}.<br>
@@ -659,6 +664,16 @@ function getPendingTileTotalChange() {
   }, 0);
 }
 
+function getPendingTileDelta(amount) {
+  return state.pendingTileChanges[String(amount)] || 0;
+}
+
+function getPendingTileTotalChange() {
+  return TILE_DENOMS.reduce((total, amount) => {
+    return total + amount * getPendingTileDelta(amount);
+  }, 0);
+}
+
 function renderTileCountersFromPlayer() {
   const tiles = state.currentPlayer?.lifeTiles || {};
 
@@ -740,8 +755,7 @@ function resetTileAction() {
 }
 
 async function applyTileChange() {
-  const changes = { ...state.pendingTileChanges };
-  const entries = Object.entries(changes)
+  const entries = Object.entries({ ...state.pendingTileChanges })
     .map(([amount, delta]) => ({ amount: Number(amount), delta }))
     .filter((entry) => entry.delta !== 0);
 

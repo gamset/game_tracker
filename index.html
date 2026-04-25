@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Game of Life Tracker</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="style.css?v=17" />
+  <link rel="stylesheet" href="style.css?v=19" />
   <meta name="theme-color" content="#1f2937" />
 </head>
 <body>
@@ -165,11 +165,12 @@
             <h3>2. Finalized cash balance</h3>
             <button id="finalizeCashBtn">Finalize My Cash</button>
             <p id="finalizedCashText" class="muted"></p>
+            <p id="lifeTileLockedText" class="muted">LIFE tile tally will appear after cash is finalized.</p>
           </div>
 
-          <div class="endBlock">
+          <div id="lifeTileSection" class="endBlock hidden">
             <h3>3. LIFE tile tally</h3>
-            <p class="muted">Use + or − beside each LIFE tile denomination to stage one or more tiles, then apply or cancel.</p>
+            <p class="muted">This section appears after finalizing cash. Use + or − beside each LIFE tile denomination to stage one or more tiles, then apply or cancel.</p>
 
             <div id="tileCounters" class="tileCounters"></div>
 
@@ -253,6 +254,6 @@
       }
     });
   </script>
-  <script type="module" src="app.js?v=17"></script>
+  <script type="module" src="app.js?v=19"></script>
 </body>
 </html>
