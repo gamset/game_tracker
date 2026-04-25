@@ -544,8 +544,12 @@ function renderPendingLoanChange() {
   const absChange = Math.abs(change);
   const moneyChange = change > 0 ? change * 20000 : change * 25000;
 
+  const firstLineAmount = change > 0
+    ? `+${formatK(change * 20000)} borrowed`
+    : `−${formatK(Math.abs(change * 25000))} paid back`;
+
   $("pendingLoanText").innerHTML = `
-    ${actionWord} <strong>${absChange} loan paper${absChange === 1 ? "" : "s"}</strong>.<br>
+    ${actionWord} <strong>${absChange} loan paper${absChange === 1 ? "" : "s"}</strong>, <strong>${firstLineAmount}</strong>.<br>
     Current loan papers: ${currentLoans}. After applying: ${projectedLoans}.<br>
     Borrowed total: ${formatK(currentBorrowed)} → ${formatK(projectedBorrowed)}.<br>
     Payback owed: ${formatK(currentOwed)} → ${formatK(projectedOwed)}.<br>

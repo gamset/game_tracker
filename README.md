@@ -223,3 +223,13 @@ LIFE tiles:
 ## Version v16 update
 
 Loan paper pending text was adjusted so the explanatory text is normal weight, while the staged count, such as `3 loan papers`, is bold.
+
+
+## Version v17 update
+
+Loan paper pending text now shows the staged loan amount directly on the first line.
+
+Examples:
+- `Add 1 loan paper, +20K borrowed.`
+- `Add 3 loan papers, +60K borrowed.`
+- `Remove/pay 2 loan papers, -50K paid back.`
