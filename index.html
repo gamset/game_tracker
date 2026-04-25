@@ -100,12 +100,21 @@
           <div id="playerSummary" class="summary"></div>
 
           <h3>Money</h3>
+          <p class="muted">Choose Add or Subtract first, select an amount, then save the change.</p>
           <div class="segmented">
-            <button id="moneyAddBtn" class="selected">Add</button>
+            <button id="moneyAddBtn">Add</button>
             <button id="moneySubtractBtn">Subtract</button>
           </div>
 
-          <div class="amountGrid" id="moneyButtons"></div>
+          <div id="moneyActionPanel" class="moneyActionPanel hidden">
+            <p id="moneyActionLabel" class="actionLabel">Select an amount</p>
+            <div class="amountGrid" id="moneyButtons"></div>
+            <div id="pendingMoneyText" class="pendingMoneyText">No amount selected.</div>
+            <div class="moneyConfirmRow">
+              <button id="saveMoneyBtn" disabled>Save Change</button>
+              <button id="cancelMoneyBtn" class="ghost">Cancel</button>
+            </div>
+          </div>
 
           <h3>Children</h3>
           <div class="counterRow">

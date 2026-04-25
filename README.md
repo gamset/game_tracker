@@ -112,7 +112,7 @@ The app includes light and dark mode plus five color themes:
 
 - Classic
 - Ocean
-- Sunset
+- Sunset, red theme
 - Forest
 - Candy
 
@@ -123,3 +123,14 @@ Theme and mode choices are saved on each device using local storage.
 This is usually caused by the browser loading an old cached file from the service worker.
 This version uses `life-tracker-v7` and calls `skipWaiting()` and `clients.claim()` to reduce stale-cache problems.
 After uploading, hard refresh the GitHub Pages link or open it in a private browser window once.
+
+
+## Staged money changes
+
+Money changes now require confirmation:
+
+1. Select Add or Subtract.
+2. Select one denomination.
+3. Tap Save Change to apply it, or Cancel to discard it.
+
+This reduces accidental money changes during play.

@@ -27,7 +27,8 @@ let state = {
   gameCode: localStorage.getItem("lifeTracker.gameCode") || "",
   playerId: localStorage.getItem("lifeTracker.playerId") || "",
   role: localStorage.getItem("lifeTracker.role") || "player",
-  moneyMode: "add",
+  moneyMode: "",
+  pendingMoneyAmount: null,
   visualTheme: localStorage.getItem("lifeTracker.visualTheme") || "classic",
   colorMode: localStorage.getItem("lifeTracker.colorMode") || "light",
   currentPlayer: null,
@@ -378,9 +379,43 @@ function escapeHTML(value = "") {
     .replaceAll("'", "&#039;");
 }
 
-async function changeMoney(amount) {
+function selectPendingMoneyAmount(amount) {
+  state.pendingMoneyAmount = amount;
+
+  document.querySelectorAll("[data-money]").forEach((btn) => {
+    btn.classList.toggle("selectedAmount", Number(btn.dataset.money) === amount);
+  });
+
+  const actionWord = state.moneyMode === "add" ? "Add" : "Subtract";
+  const sign = state.moneyMode === "add" ? "+" : "−";
+  $("pendingMoneyText").textContent = `${actionWord} ${sign}${formatK(amount)}. Tap Save Change to apply.`;
+  $("saveMoneyBtn").disabled = false;
+}
+
+function resetMoneyAction() {
+  state.moneyMode = "";
+  state.pendingMoneyAmount = null;
+
+  $("moneyActionPanel").classList.add("hidden");
+  $("moneyActionLabel").textContent = "Select an amount";
+  $("pendingMoneyText").textContent = "No amount selected.";
+  $("saveMoneyBtn").disabled = true;
+
+  $("moneyAddBtn").classList.remove("selected");
+  $("moneySubtractBtn").classList.remove("selected");
+
+  document.querySelectorAll("[data-money]").forEach((btn) => {
+    btn.classList.remove("selectedAmount");
+  });
+}
+
+async function saveMoneyChange() {
+  if (!state.moneyMode || !state.pendingMoneyAmount) return;
+
+  const amount = state.pendingMoneyAmount;
   const sign = state.moneyMode === "add" ? 1 : -1;
   const change = sign * amount;
+
   await updateDoc(playerRef(), {
     money: increment(change),
     updatedAt: serverTimestamp()
@@ -391,6 +426,8 @@ async function changeMoney(amount) {
     action: state.moneyMode,
     amount: change
   });
+
+  resetMoneyAction();
 }
 
 async function changeChildren(delta) {
@@ -599,7 +636,7 @@ function renderButtons() {
 
   $("moneyButtons").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-money]");
-    if (btn) changeMoney(Number(btn.dataset.money));
+    if (btn) selectPendingMoneyAmount(Number(btn.dataset.money));
   });
 
   const tileCountersForEvents = $("tileCounters");
@@ -615,8 +652,20 @@ function renderButtons() {
 
 function setMoneyMode(mode) {
   state.moneyMode = mode;
+  state.pendingMoneyAmount = null;
+
+  $("moneyActionPanel").classList.remove("hidden");
   $("moneyAddBtn").classList.toggle("selected", mode === "add");
   $("moneySubtractBtn").classList.toggle("selected", mode === "subtract");
+
+  const actionWord = mode === "add" ? "Add money" : "Subtract money";
+  $("moneyActionLabel").textContent = `${actionWord}: select a denomination`;
+  $("pendingMoneyText").textContent = "No amount selected.";
+  $("saveMoneyBtn").disabled = true;
+
+  document.querySelectorAll("[data-money]").forEach((btn) => {
+    btn.classList.remove("selectedAmount");
+  });
 }
 
 function chooseGame(gameType) {
@@ -656,6 +705,8 @@ function wireEvents() {
 
   $("moneyAddBtn").addEventListener("click", () => setMoneyMode("add"));
   $("moneySubtractBtn").addEventListener("click", () => setMoneyMode("subtract"));
+  $("saveMoneyBtn").addEventListener("click", saveMoneyChange);
+  $("cancelMoneyBtn").addEventListener("click", resetMoneyAction);
 
   $("plusChildBtn").addEventListener("click", () => changeChildren(1));
   $("minusChildBtn").addEventListener("click", () => changeChildren(-1));
